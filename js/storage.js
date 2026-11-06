@@ -285,6 +285,32 @@ const Storage = (() => {
       if (modoRed) return apiFetch(`/api/ats/${id}`, { method: 'DELETE' });
       return idbRemove('ats', id);
     },
+    toggleFavorito: async (id) => {
+      if (modoRed) return apiFetch(`/api/ats/${id}/favorito`, { method: 'PATCH' });
+      // Modo local: toggle manual
+      const ficha = await idbGet('ats', id);
+      if (!ficha) return;
+      ficha.favorito = !ficha.favorito;
+      await idbSave('ats', ficha);
+      return { id, favorito: ficha.favorito };
+    },
+    getReporteParada: async () => {
+      if (modoRed) return apiFetch('/api/ats/reporte/parada');
+      // Modo local: traer todas las de tipo parada
+      const rows = await idbGetAll('ats');
+      return rows
+        .filter(r => (r.tipo || 'ats') === 'parada')
+        .map(r => ({
+          ...r,
+          ot_tags:  r.ot_tags  || [],
+          codigo:   r.codigo   || '',
+          favorito: r.favorito || false,
+          esNuevo:  r.created_at && r.updated_at
+            ? Math.abs(new Date(r.updated_at) - new Date(r.created_at)) < 60000
+            : true,
+        }))
+        .sort((a, b) => (a.categoria || '').localeCompare(b.categoria || ''));
+    },
   };
 
   /* ================================================================

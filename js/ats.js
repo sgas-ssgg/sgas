@@ -28,6 +28,10 @@ async function renderAtsLista(categoria, tipo = 'ats') {
 
   document.getElementById('ats-lista-titulo').textContent = categoria;
 
+  // Botón Reporte solo visible en Parada de Planta
+  const btnReporte = document.getElementById('btn-reporte-parada');
+  if (btnReporte) btnReporte.style.display = tipo === 'parada' ? '' : 'none';
+
   // Botón nueva ficha
   document.getElementById('btn-nueva-ficha').onclick = () =>
     openModal('Nueva Ficha ATS', 'Nombre del ATS',
@@ -60,15 +64,42 @@ async function renderAtsLista(categoria, tipo = 'ats') {
       const titulo = ficha.codigo
         ? `${escapeHtml(ficha.codigo)} — ${escapeHtml(ficha.nombre)}`
         : escapeHtml(ficha.nombre);
+
+      // Determinar si es nuevo o actualizado
+      const esNuevo = ficha.created_at && ficha.updated_at
+        ? Math.abs(new Date(ficha.updated_at) - new Date(ficha.created_at)) < 60000
+        : true;
+      const badgeEstado = AtsState.tipo === 'parada'
+        ? `<span style="font-size:11px;color:${esNuevo ? '#10b981' : '#f59e0b'};font-weight:600;margin-left:6px">
+            ${esNuevo ? '🆕 Nuevo' : '🔄 Actualizado'}
+          </span>`
+        : '';
+
+      // Fecha formateada
+      const fecha = ficha.updated_at
+        ? new Date(ficha.updated_at).toLocaleDateString('es-AR')
+        : '';
+      const fechaHtml = AtsState.tipo === 'parada' && fecha
+        ? `<div style="font-size:11px;color:var(--text-dim);margin-top:2px">📅 ${fecha}</div>`
+        : '';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>
-          <a href="#ats/ficha/${ficha.id}" 
-             onclick="event.preventDefault();abrirFichaSaved(${ficha.id})"
-             style="color:var(--text);text-decoration:none;cursor:pointer"
-             onmouseover="this.style.color='var(--accent)'"
-             onmouseout="this.style.color='var(--text)'"
-          >${titulo}</a>
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <button onclick="event.stopPropagation();toggleFavorito(${ficha.id},this)"
+              style="background:none;border:none;cursor:pointer;font-size:16px;padding:0;flex-shrink:0;opacity:${ficha.favorito ? '1' : '0.3'}"
+              title="${ficha.favorito ? 'Quitar favorito' : 'Marcar como favorito'}">⭐</button>
+            <div>
+              <a href="#ats/ficha/${ficha.id}"
+                 onclick="event.preventDefault();abrirFichaSaved(${ficha.id})"
+                 style="color:var(--text);text-decoration:none;cursor:pointer"
+                 onmouseover="this.style.color='var(--accent)'"
+                 onmouseout="this.style.color='var(--text)'"
+              >${titulo}</a>${badgeEstado}
+              ${fechaHtml}
+            </div>
+          </div>
         </td>
         <td><span class="badge ${ficha.estado === 'guardado' ? 'badge-saved' : 'badge-draft'}">
           ${ficha.estado === 'guardado' ? 'Guardado' : 'Borrador'}
@@ -1076,8 +1107,310 @@ async function generarExcelBytes(ficha) {
   return wb.xlsx.writeBuffer();
 }
 
+/* ================================================================
+   FAVORITO — Toggle sin tocar el resto de la ficha
+   ================================================================ */
+async function toggleFavorito(id, btn) {
+  try {
+    const result = await Storage.ATS.toggleFavorito(id);
+    if (btn) {
+      const esFav = result?.favorito ?? false;
+      btn.style.opacity = esFav ? '1' : '0.3';
+      btn.title = esFav ? 'Quitar favorito' : 'Marcar como favorito';
+    }
+    // Actualizar en la lista en memoria también
+    if (AtsState._fichasLista) {
+      const ficha = AtsState._fichasLista.find(f => f.id === id);
+      if (ficha) ficha.favorito = result?.favorito ?? !ficha.favorito;
+    }
+  } catch(e) {
+    toast('Error al actualizar favorito', 'error');
+  }
+}
+
+/* ================================================================
+   REPORTE PARADA DE PLANTA — Vista y Excel
+   ================================================================ */
+let _reporteFiltro = 'todo'; // 'hoy' | 'semana' | 'mes' | 'todo'
+
+async function renderReporteParada() {
+  setBreadcrumb([
+    { label: 'Inicio', hash: 'inicio' },
+    { label: 'Reporte Parada de Planta' },
+  ]);
+
+  showView('reporte_parada');
+
+  const container = document.getElementById('reporte-parada-content');
+  if (!container) return;
+  container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">Cargando reporte...</div>';
+
+  let fichas = [];
+  try { fichas = await Storage.ATS.getReporteParada(); } catch(e) {
+    container.innerHTML = '<div style="color:#f87171;padding:20px">Error al cargar el reporte.</div>';
+    return;
+  }
+
+  // Aplicar filtro de fecha
+  const ahora = new Date();
+  const fichasFiltradas = fichas.filter(f => {
+    if (_reporteFiltro === 'todo') return true;
+    const fecha = new Date(f.updated_at || f.created_at);
+    if (_reporteFiltro === 'hoy') {
+      return fecha.toDateString() === ahora.toDateString();
+    }
+    if (_reporteFiltro === 'semana') {
+      const hace7 = new Date(ahora); hace7.setDate(ahora.getDate() - 7);
+      return fecha >= hace7;
+    }
+    if (_reporteFiltro === 'mes') {
+      return fecha.getMonth() === ahora.getMonth() && fecha.getFullYear() === ahora.getFullYear();
+    }
+    return true;
+  });
+
+  // Agrupar por categoría
+  const porCategoria = {};
+  fichasFiltradas.forEach(f => {
+    const cat = f.categoria || 'Sin categoría';
+    if (!porCategoria[cat]) porCategoria[cat] = [];
+    porCategoria[cat].push(f);
+  });
+
+  const totalGeneral  = fichasFiltradas.length;
+  const totalNuevos   = fichasFiltradas.filter(f => f.esNuevo).length;
+  const totalActualiz = fichasFiltradas.filter(f => !f.esNuevo).length;
+  const totalFavoritos = fichasFiltradas.filter(f => f.favorito).length;
+
+  // Filtros
+  const filtrosHtml = `
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      ${['todo','hoy','semana','mes'].map(f => `
+        <button onclick="cambiarFiltroReporte('${f}')"
+          class="btn btn-sm ${_reporteFiltro === f ? 'btn-primary' : 'btn-ghost'}"
+          id="filtro-${f}">
+          ${f === 'todo' ? 'Todo' : f === 'hoy' ? 'Hoy' : f === 'semana' ? 'Esta semana' : 'Este mes'}
+        </button>`).join('')}
+      <button class="btn btn-save btn-sm" onclick="descargarExcelReporteParada()" style="margin-left:auto">
+        📥 Descargar Excel
+      </button>
+    </div>`;
+
+  // Tabla resumen por categoría
+  const resumenRows = Object.entries(porCategoria).map(([cat, lista]) => {
+    const nuevos   = lista.filter(f => f.esNuevo).length;
+    const actualiz = lista.filter(f => !f.esNuevo).length;
+    const favs     = lista.filter(f => f.favorito).length;
+    return `<tr>
+      <td style="padding:10px 14px;font-weight:600">${escapeHtml(cat)}</td>
+      <td style="padding:10px 14px;text-align:center;font-size:18px;font-weight:700;color:var(--accent)">${lista.length}</td>
+      <td style="padding:10px 14px;text-align:center;color:#10b981;font-weight:600">${nuevos}</td>
+      <td style="padding:10px 14px;text-align:center;color:#f59e0b;font-weight:600">${actualiz}</td>
+      <td style="padding:10px 14px;text-align:center">⭐ ${favs}</td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    ${filtrosHtml}
+
+    <!-- Stats rápidas -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:20px">
+      <div class="stat-card" style="padding:14px;text-align:center">
+        <div style="font-size:26px;font-weight:700;color:var(--accent)">${totalGeneral}</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Total ATS</div>
+      </div>
+      <div class="stat-card" style="padding:14px;text-align:center">
+        <div style="font-size:26px;font-weight:700;color:#10b981">${totalNuevos}</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px">🆕 Nuevos</div>
+      </div>
+      <div class="stat-card" style="padding:14px;text-align:center">
+        <div style="font-size:26px;font-weight:700;color:#f59e0b">${totalActualiz}</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px">🔄 Actualizados</div>
+      </div>
+      <div class="stat-card" style="padding:14px;text-align:center">
+        <div style="font-size:26px;font-weight:700;color:#fbbf24">${totalFavoritos}</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px">⭐ Favoritos</div>
+      </div>
+    </div>
+
+    <!-- Tabla por especialidad -->
+    <div class="stat-card" style="padding:0;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:var(--header)">
+            <th style="padding:12px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.5px">Especialidad</th>
+            <th style="padding:12px 14px;text-align:center;font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase">Total</th>
+            <th style="padding:12px 14px;text-align:center;font-size:11px;font-weight:700;color:#10b981;text-transform:uppercase">🆕 Nuevos</th>
+            <th style="padding:12px 14px;text-align:center;font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase">🔄 Actualiz.</th>
+            <th style="padding:12px 14px;text-align:center;font-size:11px;font-weight:700;color:#fbbf24;text-transform:uppercase">⭐ Favoritos</th>
+          </tr>
+        </thead>
+        <tbody>${resumenRows}</tbody>
+        <tfoot>
+          <tr style="background:var(--card);font-weight:700">
+            <td style="padding:12px 14px">TOTAL GENERAL</td>
+            <td style="padding:12px 14px;text-align:center;color:var(--accent);font-size:18px">${totalGeneral}</td>
+            <td style="padding:12px 14px;text-align:center;color:#10b981">${totalNuevos}</td>
+            <td style="padding:12px 14px;text-align:center;color:#f59e0b">${totalActualiz}</td>
+            <td style="padding:12px 14px;text-align:center;color:#fbbf24">⭐ ${totalFavoritos}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+}
+
+function cambiarFiltroReporte(filtro) {
+  _reporteFiltro = filtro;
+  renderReporteParada();
+}
+
+async function descargarExcelReporteParada() {
+  if (!window.ExcelJS) {
+    toast('Librería Excel no disponible', 'error');
+    return;
+  }
+  toast('⏳ Generando reporte Excel...');
+
+  let fichas = [];
+  try { fichas = await Storage.ATS.getReporteParada(); } catch(e) {
+    toast('Error al generar reporte', 'error');
+    return;
+  }
+
+  const EJS = window.ExcelJS;
+  const wb  = new EJS.Workbook();
+  wb.creator = 'SGAS';
+
+  const AZUL    = { argb: 'FF2D4A6E' };
+  const VERDE   = { argb: 'FF10B981' };
+  const AMARILL = { argb: 'FFF59E0B' };
+  const BLANCO  = { argb: 'FFFFFFFF' };
+  const NEGRO   = { argb: 'FF1A1A1A' };
+  const GRIS    = { argb: 'FFEEF2F7' };
+  const borde   = { style: 'thin', color: { argb: 'FFB4B4B4' } };
+  const bords   = { top: borde, left: borde, bottom: borde, right: borde };
+
+  const sCab  = { font: { bold: true, color: { argb: BLANCO.argb }, name: 'Calibri', size: 10 }, fill: { type: 'pattern', pattern: 'solid', fgColor: AZUL }, alignment: { horizontal: 'center', vertical: 'middle', wrapText: true }, border: bords };
+  const sDato = { font: { name: 'Calibri', size: 10, color: { argb: NEGRO.argb } }, fill: { type: 'pattern', pattern: 'solid', fgColor: GRIS }, alignment: { vertical: 'top', wrapText: true }, border: bords };
+  const sNuevo = { ...sDato, font: { ...sDato.font, color: { argb: VERDE.argb }, bold: true } };
+  const sAct   = { ...sDato, font: { ...sDato.font, color: { argb: AMARILL.argb }, bold: true } };
+
+  // Agrupar por categoría
+  const porCategoria = {};
+  fichas.forEach(f => {
+    const cat = f.categoria || 'Sin categoría';
+    if (!porCategoria[cat]) porCategoria[cat] = [];
+    porCategoria[cat].push(f);
+  });
+
+  // Una hoja por categoría
+  Object.entries(porCategoria).forEach(([cat, lista]) => {
+    const ws = wb.addWorksheet(cat.substring(0, 31));
+    ws.columns = [
+      { width: 22 }, // Código
+      { width: 45 }, // Título
+      { width: 14 }, // OT
+      { width: 16 }, // TAG
+      { width: 13 }, // Estado
+    ];
+
+    // Título de la hoja
+    ws.mergeCells('A1:E1');
+    const titleRow = ws.getRow(1);
+    titleRow.height = 28;
+    titleRow.getCell(1).value = `PARADA DE PLANTA — ${cat.toUpperCase()}`;
+    titleRow.getCell(1).style = { ...sCab, font: { ...sCab.font, size: 12 } };
+
+    // Cabeceras
+    const cabRow = ws.addRow(['CÓDIGO', 'TÍTULO DEL ATS', 'OT', 'TAG', 'ESTADO']);
+    cabRow.height = 30;
+    cabRow.eachCell(cell => { cell.style = sCab; });
+
+    // Datos
+    lista.forEach(ficha => {
+      const otTags = (ficha.ot_tags || []).filter(t => t.ot || t.tag);
+      const estado = ficha.esNuevo ? 'NUEVO' : 'ACTUALIZADO';
+      const sEstado = ficha.esNuevo ? sNuevo : sAct;
+
+      if (otTags.length === 0) {
+        const row = ws.addRow([ficha.codigo || '', ficha.nombre || '', '', '', estado]);
+        row.height = 30;
+        row.getCell(1).style = sDato;
+        row.getCell(2).style = sDato;
+        row.getCell(3).style = sDato;
+        row.getCell(4).style = sDato;
+        row.getCell(5).style = sEstado;
+      } else {
+        const startRow = ws.rowCount + 1;
+        otTags.forEach((ot, i) => {
+          const row = ws.addRow([
+            i === 0 ? (ficha.codigo || '') : '',
+            i === 0 ? (ficha.nombre || '') : '',
+            ot.ot  || '',
+            ot.tag || '',
+            i === 0 ? estado : '',
+          ]);
+          row.height = 28;
+          row.getCell(1).style = sDato;
+          row.getCell(2).style = sDato;
+          row.getCell(3).style = sDato;
+          row.getCell(4).style = sDato;
+          row.getCell(5).style = sEstado;
+        });
+        // Merge vertical en código, título y estado
+        if (otTags.length > 1) {
+          const endRow = ws.rowCount;
+          ws.mergeCells(`A${startRow}:A${endRow}`);
+          ws.mergeCells(`B${startRow}:B${endRow}`);
+          ws.mergeCells(`E${startRow}:E${endRow}`);
+        }
+      }
+    });
+  });
+
+  // Hoja de resumen
+  const wsRes = wb.addWorksheet('RESUMEN GENERAL');
+  wsRes.columns = [{ width: 30 }, { width: 12 }, { width: 12 }, { width: 14 }];
+
+  wsRes.mergeCells('A1:D1');
+  wsRes.getRow(1).height = 28;
+  wsRes.getRow(1).getCell(1).value = 'RESUMEN GENERAL — ATS PARADA DE PLANTA SS.GG';
+  wsRes.getRow(1).getCell(1).style = { ...sCab, font: { ...sCab.font, size: 12 } };
+
+  const cabRes = wsRes.addRow(['ESPECIALIDAD', 'TOTAL', '🆕 NUEVOS', '🔄 ACTUALIZADOS']);
+  cabRes.height = 28;
+  cabRes.eachCell(c => { c.style = sCab; });
+
+  let totalGen = 0, totalNue = 0, totalAct = 0;
+  Object.entries(porCategoria).forEach(([cat, lista]) => {
+    const nue = lista.filter(f => f.esNuevo).length;
+    const act = lista.filter(f => !f.esNuevo).length;
+    totalGen += lista.length; totalNue += nue; totalAct += act;
+    const row = wsRes.addRow([cat, lista.length, nue, act]);
+    row.height = 22;
+    row.eachCell(c => { c.style = sDato; });
+  });
+
+  const totRow = wsRes.addRow(['TOTAL GENERAL', totalGen, totalNue, totalAct]);
+  totRow.height = 24;
+  totRow.eachCell(c => { c.style = { ...sCab, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A2035' } } }; });
+
+  // Descargar
+  const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url    = URL.createObjectURL(blob);
+  const a      = document.createElement('a');
+  a.href = url; a.download = `Reporte_ATS_Parada_Planta_SSGG_${fecha}.xlsx`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  toast('✓ Reporte Excel descargado');
+}
+
 /* ── Registrar vistas en el router ── */
 Views.atsLista = (cat, tipo) => renderAtsLista(cat, tipo || 'ats');
+Views.reporteParada = () => renderReporteParada();
 Views.genericoLista = (slug, label) => {
   AtsState.categoria = label;
   AtsState.tipo      = 'ats';
@@ -1095,10 +1428,14 @@ window.abrirFichaEdit   = abrirFichaEdit;
 window.exportarPdfAts   = exportarPdfAts;
 window.exportarExcelAts = exportarExcelAts;
 window.renderAtsLista   = renderAtsLista;
-window.crearNuevaFicha  = crearNuevaFicha;
+window.crearNuevaFicha   = crearNuevaFicha;
 window.agregarFilaOtTag  = agregarFilaOtTag;
 window.eliminarFilaOtTag = eliminarFilaOtTag;
 window.descargarZipPdf   = descargarZipPdf;
 window.descargarZipExcel = descargarZipExcel;
+window.toggleFavorito             = toggleFavorito;
+window.renderReporteParada        = renderReporteParada;
+window.descargarExcelReporteParada = descargarExcelReporteParada;
+window.cambiarFiltroReporte       = cambiarFiltroReporte;
 
 /* ── escapeHtml se define en js/utils.js (cargado antes que este módulo) ── */

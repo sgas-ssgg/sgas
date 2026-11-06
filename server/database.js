@@ -63,8 +63,11 @@ async function init() {
     ALTER TABLE ats ADD COLUMN IF NOT EXISTS emergencia TEXT NOT NULL DEFAULT '{}';
 
     -- Nuevos campos: código de ficha y tabla OT/TAG
-    ALTER TABLE ats ADD COLUMN IF NOT EXISTS codigo  TEXT NOT NULL DEFAULT '';
-    ALTER TABLE ats ADD COLUMN IF NOT EXISTS ot_tags TEXT NOT NULL DEFAULT '[]';
+    ALTER TABLE ats ADD COLUMN IF NOT EXISTS codigo   TEXT    NOT NULL DEFAULT '';
+    ALTER TABLE ats ADD COLUMN IF NOT EXISTS ot_tags  TEXT    NOT NULL DEFAULT '[]';
+
+    -- Campo favorito para marcar fichas importantes
+    ALTER TABLE ats ADD COLUMN IF NOT EXISTS favorito BOOLEAN NOT NULL DEFAULT false;
 
     CREATE INDEX IF NOT EXISTS idx_ats_tipo ON ats(tipo);
 

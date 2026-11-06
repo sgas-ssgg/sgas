@@ -191,6 +191,19 @@
       </div>
 
       <!-- ════════════════════════════
+           VISTA: REPORTE PARADA DE PLANTA
+      ════════════════════════════ -->
+      <div class="view" id="view-reporte_parada">
+        <div class="view-header">
+          <div class="view-title">📊 Reporte ATS — Parada de Planta</div>
+          <div class="view-actions">
+            <button class="btn btn-save btn-sm" onclick="descargarExcelReporteParada()">📥 Descargar Excel</button>
+          </div>
+        </div>
+        <div id="reporte-parada-content" style="padding:4px 0"></div>
+      </div>
+
+      <!-- ════════════════════════════
            VISTA: LISTA ATS
       ════════════════════════════ -->
       <div class="view" id="view-ats_lista">
@@ -202,6 +215,7 @@
             <button class="btn btn-primary" id="btn-nueva-ficha">＋ Nueva Ficha</button>
             <button class="btn btn-ghost btn-sm" id="btn-zip-pdf"  onclick="descargarZipPdf()"  title="Descargar todas las fichas en PDF">📥 ZIP PDF</button>
             <button class="btn btn-ghost btn-sm" id="btn-zip-xlsx" onclick="descargarZipExcel()" title="Descargar todas las fichas en Excel">📊 ZIP Excel</button>
+            <button class="btn btn-ghost btn-sm" id="btn-reporte-parada" onclick="navigate('reporte_parada')" style="display:none" title="Ver reporte de Parada de Planta">📊 Reporte</button>
           </div>
         </div>
         <div class="table-wrap">

@@ -102,8 +102,42 @@ function parseAts(row) {
     filas:      (() => { try { return JSON.parse(row.filas      || '[]'); } catch(_) { return []; } })(),
     emergencia: (() => { try { return JSON.parse(row.emergencia || '{}'); } catch(_) { return {}; } })(),
     ot_tags:    (() => { try { return JSON.parse(row.ot_tags    || '[]'); } catch(_) { return []; } })(),
-    codigo:     row.codigo || '',
+    codigo:     row.codigo   || '',
+    favorito:   row.favorito || false,
   };
 }
+
+// Toggle favorito — no toca ningún otro campo de la ficha
+router.patch('/:id/favorito', async (req, res) => {
+  if (!validarId(req, res)) return;
+  try {
+    const result = await pool.query(
+      'UPDATE ats SET favorito = NOT favorito WHERE id = $1 RETURNING id, favorito',
+      [req.params.id]
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: 'No encontrado' });
+    res.json(result.rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Reporte general de Parada de Planta — todas las categorías con stats
+router.get('/reporte/parada', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, nombre, categoria, codigo, ot_tags, estado, favorito, created_at, updated_at
+       FROM ats WHERE tipo='parada' ORDER BY categoria ASC, codigo ASC, id ASC`
+    );
+    const fichas = result.rows.map(row => ({
+      ...row,
+      ot_tags:  (() => { try { return JSON.parse(row.ot_tags || '[]'); } catch(_) { return []; } })(),
+      codigo:   row.codigo  || '',
+      favorito: row.favorito || false,
+      esNuevo:  row.created_at && row.updated_at
+        ? Math.abs(new Date(row.updated_at) - new Date(row.created_at)) < 60000
+        : true,
+    }));
+    res.json(fichas);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 module.exports = router;

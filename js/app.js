@@ -31,6 +31,7 @@ const ROUTES = {
   'semanales':            () => Views.genericoLista('semanales',            'ATS Semanales'),
   'rescatista':           () => Views.genericoLista('rescatista',           'Rescatista'),
   'actividades-criticas': () => Views.genericoLista('actividades-criticas', 'Actividades Críticas'),
+  'reporte_parada':       () => Views.reporteParada(),
 };
 
 /* ── Rutas de checklists por categoría ── */
