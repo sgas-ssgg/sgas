@@ -1305,7 +1305,8 @@ async function descargarExcelReporteParada() {
 
   // Una hoja por categoría
   Object.entries(porCategoria).forEach(([cat, lista]) => {
-    const ws = wb.addWorksheet(cat.substring(0, 31));
+    const nombreHoja = cat.substring(0, 31).replace(/[*?:\\/\[\]]/g, '-');
+    const ws = wb.addWorksheet(nombreHoja);
     ws.columns = [
       { width: 22 }, // Código
       { width: 45 }, // Título
