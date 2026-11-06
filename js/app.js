@@ -443,6 +443,7 @@ const ACCESOS_RAPIDOS = [
   { id: 'planos',             label: 'Planos y Documentos',  icon: '📁', hash: 'planos',              sidebarId: 'sidebar-planos'      },
   { id: 'checklists',         label: 'Checklists',           icon: '✅', hash: 'checklists',          sidebarId: 'sidebar-checklists'  },
   { id: 'equipos',            label: 'Equipos / TAG',        icon: '🔧', hash: 'equipos',             sidebarId: 'sidebar-equipos'     },
+  { id: 'reporte-parada',     label: 'Reporte Parada Planta',icon: '📊', hash: 'reporte_parada',      sidebarId: null                  },
 ];
 
 const DASH_STORAGE_KEY = 'sgas_dash_accesos'; // qué accesos están activos en el dashboard
@@ -454,11 +455,13 @@ function getAccesosActivos() {
     const saved = localStorage.getItem(DASH_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Si está vacío o corrupto, resetear a todos activos
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Asegurar que el reporte-parada esté siempre disponible si no está en la lista
+        if (!parsed.includes('reporte-parada')) parsed.push('reporte-parada');
+        return parsed;
+      }
     }
   } catch(_) {}
-  // Por defecto todos activos
   const todos = ACCESOS_RAPIDOS.map(a => a.id);
   setAccesosActivos(todos);
   return todos;
@@ -487,6 +490,7 @@ function agregarAlHistorial(ficha) {
 function actualizarSidebar() {
   const activos = getAccesosActivos();
   ACCESOS_RAPIDOS.forEach(a => {
+    if (!a.sidebarId) return; // sin sidebar (ej: reporte)
     const el = document.getElementById(a.sidebarId);
     if (!el) return;
     // Si está en accesos rápidos → ocultar del sidebar; si no → mostrar en sidebar
