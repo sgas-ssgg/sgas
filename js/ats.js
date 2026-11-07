@@ -1179,10 +1179,35 @@ async function renderReporteParada() {
     porCategoria[cat].push(f);
   });
 
-  const totalGeneral  = fichasFiltradas.length;
-  const totalNuevos   = fichasFiltradas.filter(f => f.esNuevo).length;
-  const totalActualiz = fichasFiltradas.filter(f => !f.esNuevo).length;
+  const totalGeneral   = fichasFiltradas.length;
   const totalFavoritos = fichasFiltradas.filter(f => f.favorito).length;
+
+  // Actividad de HOY (siempre del total, no del filtro)
+  const hoy     = new Date().toISOString().slice(0, 10);
+  const nuevosHoy    = fichas.filter(f =>  f.esNuevo && (f.fecha_creacion||'').slice(0,10) === hoy);
+  const actualizHoy  = fichas.filter(f => !f.esNuevo && (f.fecha_actualizacion||f.fecha_creacion||'').slice(0,10) === hoy);
+
+  // Agrupar actividad de hoy por categoría
+  const catNuevosHoy   = {};
+  const catActualizHoy = {};
+  nuevosHoy.forEach(f => {
+    const c = f.categoria || 'Sin categoría';
+    catNuevosHoy[c] = (catNuevosHoy[c] || 0) + 1;
+  });
+  actualizHoy.forEach(f => {
+    const c = f.categoria || 'Sin categoría';
+    catActualizHoy[c] = (catActualizHoy[c] || 0) + 1;
+  });
+
+  const rowsNuevosHoy = Object.entries(catNuevosHoy).map(([cat, n]) =>
+    `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span>${escapeHtml(cat)}</span><span style="font-weight:700;color:#10b981">${n}</span>
+    </div>`).join('') || `<div style="font-size:12px;color:var(--text-dim);padding:8px 0">Ninguno hoy</div>`;
+
+  const rowsActualizHoy = Object.entries(catActualizHoy).map(([cat, n]) =>
+    `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span>${escapeHtml(cat)}</span><span style="font-weight:700;color:#f59e0b">${n}</span>
+    </div>`).join('') || `<div style="font-size:12px;color:var(--text-dim);padding:8px 0">Ninguno hoy</div>`;
 
   // Filtros
   const filtrosHtml = `
@@ -1198,22 +1223,34 @@ async function renderReporteParada() {
       </button>
     </div>`;
 
-  // Tabla resumen por categoría
+  // Tabla resumen por categoría — solo TOTAL
   const resumenRows = Object.entries(porCategoria).map(([cat, lista]) => {
-    const nuevos   = lista.filter(f => f.esNuevo).length;
-    const actualiz = lista.filter(f => !f.esNuevo).length;
-    const favs     = lista.filter(f => f.favorito).length;
+    const favs = lista.filter(f => f.favorito).length;
     return `<tr>
       <td style="padding:10px 14px;font-weight:600">${escapeHtml(cat)}</td>
       <td style="padding:10px 14px;text-align:center;font-size:18px;font-weight:700;color:var(--accent)">${lista.length}</td>
-      <td style="padding:10px 14px;text-align:center;color:#10b981;font-weight:600">${nuevos}</td>
-      <td style="padding:10px 14px;text-align:center;color:#f59e0b;font-weight:600">${actualiz}</td>
       <td style="padding:10px 14px;text-align:center">⭐ ${favs}</td>
     </tr>`;
   }).join('');
 
   container.innerHTML = `
     ${filtrosHtml}
+
+    <!-- Actividad de hoy -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+      <div class="stat-card" style="padding:16px">
+        <div style="font-size:11px;font-weight:700;color:#10b981;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">
+          🆕 Nuevos hoy — ${nuevosHoy.length}
+        </div>
+        ${rowsNuevosHoy}
+      </div>
+      <div class="stat-card" style="padding:16px">
+        <div style="font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">
+          🔄 Actualizados hoy — ${actualizHoy.length}
+        </div>
+        ${rowsActualizHoy}
+      </div>
+    </div>
 
     <!-- Stats rápidas -->
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:20px">
@@ -1222,28 +1259,18 @@ async function renderReporteParada() {
         <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Total ATS</div>
       </div>
       <div class="stat-card" style="padding:14px;text-align:center">
-        <div style="font-size:26px;font-weight:700;color:#10b981">${totalNuevos}</div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:4px">🆕 Nuevos</div>
-      </div>
-      <div class="stat-card" style="padding:14px;text-align:center">
-        <div style="font-size:26px;font-weight:700;color:#f59e0b">${totalActualiz}</div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:4px">🔄 Actualizados</div>
-      </div>
-      <div class="stat-card" style="padding:14px;text-align:center">
         <div style="font-size:26px;font-weight:700;color:#fbbf24">${totalFavoritos}</div>
         <div style="font-size:11px;color:var(--text-dim);margin-top:4px">⭐ Favoritos</div>
       </div>
     </div>
 
-    <!-- Tabla por especialidad -->
+    <!-- Tabla por especialidad — solo total -->
     <div class="stat-card" style="padding:0;overflow:hidden">
       <table style="width:100%;border-collapse:collapse">
         <thead>
           <tr style="background:var(--header)">
             <th style="padding:12px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.5px">Especialidad</th>
-            <th style="padding:12px 14px;text-align:center;font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase">Total</th>
-            <th style="padding:12px 14px;text-align:center;font-size:11px;font-weight:700;color:#10b981;text-transform:uppercase">🆕 Nuevos</th>
-            <th style="padding:12px 14px;text-align:center;font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase">🔄 Actualiz.</th>
+            <th style="padding:12px 14px;text-align:center;font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase">Total ATS</th>
             <th style="padding:12px 14px;text-align:center;font-size:11px;font-weight:700;color:#fbbf24;text-transform:uppercase">⭐ Favoritos</th>
           </tr>
         </thead>
@@ -1252,8 +1279,6 @@ async function renderReporteParada() {
           <tr style="background:var(--card);font-weight:700">
             <td style="padding:12px 14px">TOTAL GENERAL</td>
             <td style="padding:12px 14px;text-align:center;color:var(--accent);font-size:18px">${totalGeneral}</td>
-            <td style="padding:12px 14px;text-align:center;color:#10b981">${totalNuevos}</td>
-            <td style="padding:12px 14px;text-align:center;color:#f59e0b">${totalActualiz}</td>
             <td style="padding:12px 14px;text-align:center;color:#fbbf24">⭐ ${totalFavoritos}</td>
           </tr>
         </tfoot>
@@ -1373,28 +1398,26 @@ async function descargarExcelReporteParada() {
 
   // Hoja de resumen
   const wsRes = wb.addWorksheet('RESUMEN GENERAL');
-  wsRes.columns = [{ width: 30 }, { width: 12 }, { width: 12 }, { width: 14 }];
+  wsRes.columns = [{ width: 30 }, { width: 12 }];
 
-  wsRes.mergeCells('A1:D1');
+  wsRes.mergeCells('A1:B1');
   wsRes.getRow(1).height = 28;
   wsRes.getRow(1).getCell(1).value = 'RESUMEN GENERAL — ATS PARADA DE PLANTA SS.GG';
   wsRes.getRow(1).getCell(1).style = { ...sCab, font: { ...sCab.font, size: 12 } };
 
-  const cabRes = wsRes.addRow(['ESPECIALIDAD', 'TOTAL', '🆕 NUEVOS', '🔄 ACTUALIZADOS']);
+  const cabRes = wsRes.addRow(['ESPECIALIDAD', 'TOTAL']);
   cabRes.height = 28;
   cabRes.eachCell(c => { c.style = sCab; });
 
-  let totalGen = 0, totalNue = 0, totalAct = 0;
+  let totalGen = 0;
   Object.entries(porCategoria).forEach(([cat, lista]) => {
-    const nue = lista.filter(f => f.esNuevo).length;
-    const act = lista.filter(f => !f.esNuevo).length;
-    totalGen += lista.length; totalNue += nue; totalAct += act;
-    const row = wsRes.addRow([cat, lista.length, nue, act]);
+    totalGen += lista.length;
+    const row = wsRes.addRow([cat, lista.length]);
     row.height = 22;
     row.eachCell(c => { c.style = sDato; });
   });
 
-  const totRow = wsRes.addRow(['TOTAL GENERAL', totalGen, totalNue, totalAct]);
+  const totRow = wsRes.addRow(['TOTAL GENERAL', totalGen]);
   totRow.height = 24;
   totRow.eachCell(c => { c.style = { ...sCab, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A2035' } } }; });
 
