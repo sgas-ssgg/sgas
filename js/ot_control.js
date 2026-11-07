@@ -48,18 +48,12 @@ async function renderControlOt() {
     return;
   }
 
-  // Si no hay OTs cargadas, intentar pre-cargar desde el Excel del servidor
+  // Si no hay OTs en la app, mostrar mensaje simple
   if (_otCache.length === 0) {
     container.innerHTML = `
       <div style="text-align:center;padding:40px;color:var(--text-dim)">
         <div style="font-size:32px;margin-bottom:12px">📋</div>
-        <div style="font-size:14px;margin-bottom:16px">No hay OTs cargadas todavía</div>
-        <button class="btn btn-primary" onclick="preCargarOtsDesdeServidor()">
-          🔄 Cargar OTs desde el Excel del servidor
-        </button>
-        <div style="margin-top:12px;font-size:12px;color:var(--text-dim)">
-          O usá el botón 📁 Cargar Excel para subir tu lista
-        </div>
+        <div style="font-size:14px">No hay OTs cargadas. Usá el botón ＋ Agregar OT para agregar nuevas.</div>
       </div>`;
     return;
   }
