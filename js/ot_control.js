@@ -381,19 +381,19 @@ async function cargarExcelOt(input) {
       const ots  = [];
       for (let i = 1; i < data.length; i++) {
         const row   = data[i];
-        const orden = String(row[9] || '').trim();
+        const orden = String(row[10] || '').trim();
         if (!orden || !/^\d+$/.test(orden)) continue;
         ots.push({
           orden,
-          grupo_planif: String(row[10] || '').trim(),
-          descripcion:  String(row[11] || '').trim(),
-          ubicac_tec:   String(row[12] || '').trim(),
-          tag:          String(row[13] || '').trim(),
-          area:         String(row[14] || '').trim(),
-          procesos:     String(row[15] || '').trim(),
-          ubicacion:    String(row[16] || '').trim(),
-          sub_proceso:  String(row[17] || '').trim(),
-          grupo_equipo: String(row[18] || '').trim(),
+          grupo_planif: String(row[11] || '').trim(),
+          descripcion:  String(row[12] || '').trim(),
+          ubicac_tec:   String(row[13] || '').trim(),
+          tag:          String(row[14] || '').trim(),
+          area:         String(row[15] || '').trim(),
+          procesos:     String(row[16] || '').trim(),
+          ubicacion:    String(row[17] || '').trim(),
+          sub_proceso:  String(row[18] || '').trim(),
+          grupo_equipo: String(row[19] || '').trim(),
         });
       }
       if (ots.length === 0) { toast('No se encontraron OTs válidas', 'error'); input.value = ''; return; }
@@ -413,7 +413,7 @@ async function cargarExcelOt(input) {
 async function preCargarOtsDesdeServidor() {
   toast('⏳ Cargando OTs desde el servidor...');
   try {
-    const resp = await fetch('worklist 2027. v.xlsx');
+    const resp = await fetch('worklist 2027.xlsx');
     if (!resp.ok) throw new Error('Archivo no encontrado');
     const buffer = await resp.arrayBuffer();
     if (!window.XLSX) { toast('Librería XLSX no disponible', 'error'); return; }
@@ -423,19 +423,19 @@ async function preCargarOtsDesdeServidor() {
     const ots  = [];
     for (let i = 1; i < data.length; i++) {
       const row   = data[i];
-      const orden = String(row[9] || '').trim();
+      const orden = String(row[10] || '').trim();
       if (!orden || !/^\d+$/.test(orden)) continue;
       ots.push({
         orden,
-        grupo_planif: String(row[10] || '').trim(),
-        descripcion:  String(row[11] || '').trim(),
-        ubicac_tec:   String(row[12] || '').trim(),
-        tag:          String(row[13] || '').trim(),
-        area:         String(row[14] || '').trim(),
-        procesos:     String(row[15] || '').trim(),
-        ubicacion:    String(row[16] || '').trim(),
-        sub_proceso:  String(row[17] || '').trim(),
-        grupo_equipo: String(row[18] || '').trim(),
+        grupo_planif: String(row[11] || '').trim(),
+        descripcion:  String(row[12] || '').trim(),
+        ubicac_tec:   String(row[13] || '').trim(),
+        tag:          String(row[14] || '').trim(),
+        area:         String(row[15] || '').trim(),
+        procesos:     String(row[16] || '').trim(),
+        ubicacion:    String(row[17] || '').trim(),
+        sub_proceso:  String(row[18] || '').trim(),
+        grupo_equipo: String(row[19] || '').trim(),
       });
     }
     if (ots.length === 0) { toast('No se encontraron OTs', 'error'); return; }
