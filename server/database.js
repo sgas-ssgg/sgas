@@ -116,8 +116,14 @@ async function init() {
     );
     CREATE INDEX IF NOT EXISTS idx_ot_control_orden ON ot_control(orden);
 
-    -- Columna completada para marcar OTs finalizadas
-    ALTER TABLE ot_control ADD COLUMN IF NOT EXISTS completada BOOLEAN NOT NULL DEFAULT false;
+    -- Columna completada y columnas adicionales del Excel (sin Backlog)
+    ALTER TABLE ot_control ADD COLUMN IF NOT EXISTS completada   BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE ot_control ADD COLUMN IF NOT EXISTS grupo_planif TEXT NOT NULL DEFAULT '';
+    ALTER TABLE ot_control ADD COLUMN IF NOT EXISTS ubicac_tec   TEXT NOT NULL DEFAULT '';
+    ALTER TABLE ot_control ADD COLUMN IF NOT EXISTS procesos     TEXT NOT NULL DEFAULT '';
+    ALTER TABLE ot_control ADD COLUMN IF NOT EXISTS ubicacion    TEXT NOT NULL DEFAULT '';
+    ALTER TABLE ot_control ADD COLUMN IF NOT EXISTS sub_proceso  TEXT NOT NULL DEFAULT '';
+    ALTER TABLE ot_control ADD COLUMN IF NOT EXISTS grupo_equipo TEXT NOT NULL DEFAULT '';
   `);
   console.log('Base de datos inicializada');
 }

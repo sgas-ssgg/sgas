@@ -20,42 +20,55 @@ router.get('/', async (req, res) => {
 // POST / — agregar una OT individual
 router.post('/', async (req, res) => {
   try {
-    const { orden, descripcion, tag, area, proceso } = req.body;
+    const { orden, descripcion, tag, area, proceso, grupo_planif, ubicac_tec, procesos, ubicacion, sub_proceso, grupo_equipo } = req.body;
     if (!orden) return res.status(400).json({ error: 'orden requerido' });
     const result = await pool.query(
-      `INSERT INTO ot_control (orden, descripcion, tag, area, proceso)
-       VALUES ($1,$2,$3,$4,$5)
+      `INSERT INTO ot_control (orden, descripcion, tag, area, proceso, grupo_planif, ubicac_tec, procesos, ubicacion, sub_proceso, grupo_equipo)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
        ON CONFLICT (orden) DO UPDATE SET
-         descripcion = EXCLUDED.descripcion,
-         tag         = EXCLUDED.tag,
-         area        = EXCLUDED.area,
-         proceso     = EXCLUDED.proceso
+         descripcion  = EXCLUDED.descripcion,
+         tag          = EXCLUDED.tag,
+         area         = EXCLUDED.area,
+         proceso      = EXCLUDED.proceso,
+         grupo_planif = EXCLUDED.grupo_planif,
+         ubicac_tec   = EXCLUDED.ubicac_tec,
+         procesos     = EXCLUDED.procesos,
+         ubicacion    = EXCLUDED.ubicacion,
+         sub_proceso  = EXCLUDED.sub_proceso,
+         grupo_equipo = EXCLUDED.grupo_equipo
        RETURNING *`,
-      [orden.trim(), descripcion||'', tag||'', area||'', proceso||'']
+      [orden.trim(), descripcion||'', tag||'', area||'', proceso||'',
+       grupo_planif||'', ubicac_tec||'', procesos||'', ubicacion||'', sub_proceso||'', grupo_equipo||'']
     );
     res.status(201).json(result.rows[0]);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /bulk — carga masiva desde Excel
+// POST /bulk — carga masiva
 router.post('/bulk', async (req, res) => {
   try {
-    const { ots } = req.body; // array de { orden, descripcion, tag, area, proceso }
+    const { ots } = req.body;
     if (!Array.isArray(ots) || ots.length === 0)
       return res.status(400).json({ error: 'Se esperaba array ots' });
-
     let insertadas = 0;
     for (const ot of ots) {
       if (!ot.orden) continue;
       await pool.query(
-        `INSERT INTO ot_control (orden, descripcion, tag, area, proceso)
-         VALUES ($1,$2,$3,$4,$5)
+        `INSERT INTO ot_control (orden, descripcion, tag, area, proceso, grupo_planif, ubicac_tec, procesos, ubicacion, sub_proceso, grupo_equipo)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
          ON CONFLICT (orden) DO UPDATE SET
-           descripcion = EXCLUDED.descripcion,
-           tag         = EXCLUDED.tag,
-           area        = EXCLUDED.area,
-           proceso     = EXCLUDED.proceso`,
-        [ot.orden.trim(), ot.descripcion||'', ot.tag||'', ot.area||'', ot.proceso||'']
+           descripcion  = EXCLUDED.descripcion,
+           tag          = EXCLUDED.tag,
+           area         = EXCLUDED.area,
+           proceso      = EXCLUDED.proceso,
+           grupo_planif = EXCLUDED.grupo_planif,
+           ubicac_tec   = EXCLUDED.ubicac_tec,
+           procesos     = EXCLUDED.procesos,
+           ubicacion    = EXCLUDED.ubicacion,
+           sub_proceso  = EXCLUDED.sub_proceso,
+           grupo_equipo = EXCLUDED.grupo_equipo`,
+        [ot.orden.trim(), ot.descripcion||'', ot.tag||'', ot.area||'', ot.proceso||'',
+         ot.grupo_planif||'', ot.ubicac_tec||'', ot.procesos||'', ot.ubicacion||'', ot.sub_proceso||'', ot.grupo_equipo||'']
       );
       insertadas++;
     }
