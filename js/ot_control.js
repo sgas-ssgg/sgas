@@ -98,51 +98,60 @@ function renderTablaControlOt() {
   const totalSinAts   = totalOts - totalConAts;
   const totalCompletas = _otCache.filter(ot => ot.completada).length;
 
+  // Colores fijos estilo Excel — siempre legibles sin importar el tema
+  const TB = '#1a1a1a';           // texto negro
+  const TG = '#6b7280';           // texto gris (completadas)
+  const BH = '#2d4a6e';           // fondo header azul oscuro
+  const BW = '#ffffff';           // fondo celda blanco
+  const BC = '#f3f6fa';           // fondo celda alternada (azul muy pálido)
+  const BK = '#e2e8f0';           // fondo completada (gris claro)
+  const BD = '#c8d5e3';           // borde gris azulado
+  const td = `border:1px solid ${BD}`;
+
   // Cabeceras de disciplinas
   const thDisc = OT_DISCIPLINAS.map(d =>
-    `<th style="background:var(--header);padding:7px 4px;text-align:center;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:38px">${d.codigo}</th>`
+    `<th style="background:${BH};padding:7px 4px;text-align:center;font-size:10px;font-weight:700;color:#ffffff;${td};min-width:38px">${d.codigo}</th>`
   ).join('');
 
   // Filas
   const filas = otsFiltradas.map((ot, idx) => {
-    const orden     = (ot.orden || '').trim();
-    const cats      = otEnAts[orden] || new Set();
-    const completa  = !!ot.completada;
-    const rowBg     = completa ? 'background:rgba(107,114,128,.25)' : '';
-    const textColor = completa ? 'color:#9ca3af' : 'color:var(--text)';
+    const orden    = (ot.orden || '').trim();
+    const cats     = otEnAts[orden] || new Set();
+    const completa = !!ot.completada;
+    const rowBg    = completa ? BK : (idx % 2 === 0 ? BW : BC);
+    const txtCol   = completa ? TG : TB;
 
     const celdas = OT_DISCIPLINAS.map(d => {
       const tiene = cats.has(d.categoria.toUpperCase());
-      const bg    = completa
-        ? 'background:rgba(107,114,128,.15)'
-        : tiene ? 'background:rgba(16,185,129,.12)' : 'background:var(--card)';
-      return `<td style="text-align:center;padding:5px 4px;border:1px solid var(--border);${bg}">
+      const bg    = completa ? BK : tiene ? '#dcfce7' : BW;
+      return `<td style="text-align:center;padding:5px 4px;${td};background:${bg}">
         <span style="font-size:13px;${completa?'opacity:.5':''}">${tiene ? '✅' : '❌'}</span>
       </td>`;
     }).join('');
 
-    return `<tr style="border-bottom:1px solid var(--border);${rowBg};transition:background .2s">
-      <td style="padding:7px 8px;border:1px solid var(--border);font-size:11px;${textColor};text-align:center;min-width:32px">${idx + 1}</td>
+    const cs = `padding:7px 8px;${td};background:${rowBg};font-size:11px;color:${txtCol}`;
+    return `<tr>
+      <td style="${cs};text-align:center;min-width:32px">${idx + 1}</td>
       ${celdas}
-      <td style="padding:7px 10px;border:1px solid var(--border);font-weight:600;font-size:12px;${textColor};min-width:110px">${escapeHtml(orden)}</td>
-      <td style="padding:7px 8px;border:1px solid var(--border);font-size:11px;${textColor};text-align:center;min-width:50px">${escapeHtml(ot.grupo_planif||'')}</td>
-      <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(ot.descripcion||'')}">${escapeHtml(ot.descripcion||'')}</td>
-      <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};min-width:80px">${escapeHtml(ot.tag||'')}</td>
-      <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};min-width:80px">${escapeHtml(ot.area||'')}</td>
-      <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};min-width:120px">${escapeHtml(ot.procesos||ot.proceso||'')}</td>
-      <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};min-width:80px">${escapeHtml(ot.ubicacion||'')}</td>
-      <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(ot.sub_proceso||'')}">${escapeHtml(ot.sub_proceso||'')}</td>
-      <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(ot.grupo_equipo||'')}">${escapeHtml(ot.grupo_equipo||'')}</td>
-      <td style="padding:7px 8px;border:1px solid var(--border);text-align:center;min-width:40px">
+      <td style="${cs};font-weight:700;min-width:110px">${escapeHtml(orden)}</td>
+      <td style="${cs};text-align:center;min-width:50px">${escapeHtml(ot.grupo_planif||'')}</td>
+      <td style="${cs};max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(ot.descripcion||'')}">${escapeHtml(ot.descripcion||'')}</td>
+      <td style="${cs};min-width:80px">${escapeHtml(ot.tag||'')}</td>
+      <td style="${cs};min-width:80px">${escapeHtml(ot.area||'')}</td>
+      <td style="${cs};min-width:120px">${escapeHtml(ot.procesos||ot.proceso||'')}</td>
+      <td style="${cs};min-width:80px">${escapeHtml(ot.ubicacion||'')}</td>
+      <td style="${cs};max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(ot.sub_proceso||'')}">${escapeHtml(ot.sub_proceso||'')}</td>
+      <td style="${cs};max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(ot.grupo_equipo||'')}">${escapeHtml(ot.grupo_equipo||'')}</td>
+      <td style="padding:7px 8px;${td};background:${rowBg};text-align:center;min-width:40px">
         <button onclick="toggleCompletadaOt(${ot.id},this)"
           title="${completa ? 'Marcar incompleta' : 'Marcar como completada'}"
-          style="background:${completa?'rgba(16,185,129,.2)':'none'};border:1px solid ${completa?'#10b981':'var(--border)'};border-radius:4px;cursor:pointer;font-size:13px;padding:2px 6px;color:${completa?'#10b981':'var(--text-dim)'}">
+          style="background:${completa?'#d1fae5':'none'};border:1px solid ${completa?'#10b981':'#c8d5e3'};border-radius:4px;cursor:pointer;font-size:13px;padding:2px 6px;color:${completa?'#10b981':'#6b7280'}">
           ${completa ? '✅' : '☐'}
         </button>
       </td>
-      <td style="padding:7px 8px;border:1px solid var(--border);text-align:center;min-width:36px">
+      <td style="padding:7px 8px;${td};background:${rowBg};text-align:center;min-width:36px">
         <button onclick="eliminarOt(${ot.id})"
-          style="background:none;border:none;color:#f87171;cursor:pointer;font-size:13px;opacity:.6" title="Eliminar">🗑️</button>
+          style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;opacity:.7" title="Eliminar">🗑️</button>
       </td>
     </tr>`;
   }).join('');
@@ -151,11 +160,11 @@ function renderTablaControlOt() {
   const areas  = [...new Set(_otCache.map(o => o.area).filter(Boolean))].sort();
   const grupos = [...new Set(_otCache.map(o => o.grupo_planif).filter(Boolean))].sort();
 
-  const selArea  = `<select onchange="filtrarOtPorArea(this.value)" style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px;cursor:pointer">
+  const selArea  = `<select onchange="filtrarOtPorArea(this.value)" style="background:#ffffff;border:1px solid #c8d5e3;border-radius:6px;padding:5px 8px;color:#1a1a1a;font-size:12px;cursor:pointer">
     <option value="">Todas las áreas</option>
     ${areas.map(a=>`<option value="${escapeHtml(a)}" ${_otFiltroArea===a?'selected':''}>${escapeHtml(a)}</option>`).join('')}
   </select>`;
-  const selGrupo = `<select onchange="filtrarOtPorGrupo(this.value)" style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px;cursor:pointer">
+  const selGrupo = `<select onchange="filtrarOtPorGrupo(this.value)" style="background:#ffffff;border:1px solid #c8d5e3;border-radius:6px;padding:5px 8px;color:#1a1a1a;font-size:12px;cursor:pointer">
     <option value="">Todos los grupos</option>
     ${grupos.map(g=>`<option value="${escapeHtml(g)}" ${_otFiltroGrupo===g?'selected':''}>${escapeHtml(g)}</option>`).join('')}
   </select>`;
@@ -174,27 +183,27 @@ function renderTablaControlOt() {
     </div>
 
     <!-- Tabla con scroll horizontal -->
-    <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--border)">
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <div style="overflow-x:auto;border-radius:8px;border:1px solid #c8d5e3">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;background:#ffffff">
         <thead>
           <tr>
-            <th style="background:var(--header);padding:8px 6px;text-align:center;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:32px">#</th>
+            <th style="background:${BH};padding:8px 6px;text-align:center;font-size:10px;font-weight:700;color:#ffffff;border:1px solid ${BD};min-width:32px">#</th>
             ${thDisc}
-            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:110px">ORDEN</th>
-            <th style="background:var(--header);padding:8px 6px;text-align:center;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:50px">G.PLANIF</th>
-            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:200px">TEXTO BREVE</th>
-            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:80px">TAG</th>
-            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:80px">ÁREA</th>
-            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:120px">PROCESOS</th>
-            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:80px">UBICACIÓN</th>
-            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:150px">SUB-PROCESO</th>
-            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:120px">GRUPO EQUIPO</th>
-            <th style="background:var(--header);padding:8px 6px;text-align:center;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:40px">✓</th>
-            <th style="background:var(--header);padding:8px 6px;border:1px solid var(--border);min-width:36px"></th>
+            <th style="background:${BH};padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#ffffff;border:1px solid ${BD};min-width:110px">ORDEN</th>
+            <th style="background:${BH};padding:8px 6px;text-align:center;font-size:10px;font-weight:700;color:#ffffff;border:1px solid ${BD};min-width:50px">G.PLANIF</th>
+            <th style="background:${BH};padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#ffffff;border:1px solid ${BD};min-width:200px">TEXTO BREVE</th>
+            <th style="background:${BH};padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#ffffff;border:1px solid ${BD};min-width:80px">TAG</th>
+            <th style="background:${BH};padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#ffffff;border:1px solid ${BD};min-width:80px">ÁREA</th>
+            <th style="background:${BH};padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#ffffff;border:1px solid ${BD};min-width:120px">PROCESOS</th>
+            <th style="background:${BH};padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#ffffff;border:1px solid ${BD};min-width:80px">UBICACIÓN</th>
+            <th style="background:${BH};padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#ffffff;border:1px solid ${BD};min-width:150px">SUB-PROCESO</th>
+            <th style="background:${BH};padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#ffffff;border:1px solid ${BD};min-width:120px">GRUPO EQUIPO</th>
+            <th style="background:${BH};padding:8px 6px;text-align:center;font-size:10px;font-weight:700;color:#ffffff;border:1px solid ${BD};min-width:40px">✓</th>
+            <th style="background:${BH};padding:8px 6px;border:1px solid ${BD};min-width:36px"></th>
           </tr>
         </thead>
         <tbody>
-          ${filas || `<tr><td colspan="${OT_DISCIPLINAS.length + 12}" style="text-align:center;padding:32px;color:var(--text-dim)">No hay OTs que mostrar</td></tr>`}
+          ${filas || `<tr><td colspan="${OT_DISCIPLINAS.length + 12}" style="text-align:center;padding:32px;color:#6b7280;background:#ffffff">No hay OTs que mostrar</td></tr>`}
         </tbody>
       </table>
     </div>`;
