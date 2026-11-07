@@ -115,6 +115,9 @@ async function init() {
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS idx_ot_control_orden ON ot_control(orden);
+
+    -- Columna completada para marcar OTs finalizadas
+    ALTER TABLE ot_control ADD COLUMN IF NOT EXISTS completada BOOLEAN NOT NULL DEFAULT false;
   `);
   console.log('Base de datos inicializada');
 }

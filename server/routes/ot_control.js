@@ -75,4 +75,17 @@ router.delete('/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// PATCH /:id/completada — toggle completada
+router.patch('/:id/completada', async (req, res) => {
+  if (!validarId(req, res)) return;
+  try {
+    const result = await pool.query(
+      'UPDATE ot_control SET completada = NOT completada WHERE id = $1 RETURNING id, completada',
+      [req.params.id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'No encontrado' });
+    res.json(result.rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

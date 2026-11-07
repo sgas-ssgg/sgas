@@ -535,6 +535,14 @@ const Storage = (() => {
       if (modoRed) return apiFetch(`/api/ot-control/${id}`, { method: 'DELETE' });
       return idbRemove('ot_control', id);
     },
+    toggleCompletada: async (id) => {
+      if (modoRed) return apiFetch(`/api/ot-control/${id}/completada`, { method: 'PATCH' });
+      const ot = await idbGet('ot_control', id);
+      if (!ot) return;
+      ot.completada = !ot.completada;
+      await idbSave('ot_control', ot);
+      return { id, completada: ot.completada };
+    },
   };
 
   return { init, reconectar, usarSinConexion, getModo, mensajeError, ATS, Emergencias, Documentos, Config, Categorias, Sheets, Checklists, OtControl };
