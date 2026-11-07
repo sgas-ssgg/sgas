@@ -15,7 +15,6 @@ const OT_DISCIPLINAS = [
   { codigo: 'MEC',  label: 'MEC',  categoria: 'MECANICA'             },
   { codigo: 'INST', label: 'INST', categoria: 'INSTRUMENTACION'      },
   { codigo: 'ELE',  label: 'ELE',  categoria: 'ELECTRICIDAD'         },
-  { codigo: 'CIV',  label: 'CIV',  categoria: 'CIVIL/CARPINTERIA'    },
   { codigo: 'REP',  label: 'REP',  categoria: 'REPARACIONES'         },
 ];
 
