@@ -3,23 +3,44 @@
    Configuración visual: temas, colores, fuentes, tamaño, fondo.
    ================================================================ */
 
-/* ── 15 Temas predefinidos ── */
+/* ── 15 Temas oscuros + 3 Temas claros profesionales ── */
 const TEMAS = [
-  { id: 'azul-corp',     nombre: 'Azul Corporativo',   bg: '#0f172a', sidebar: '#1e293b', header: '#2563eb', accent: '#3b82f6', save: '#1d4ed8', del: '#991b1b', edit: '#92400e' },
-  { id: 'verde-esm',     nombre: 'Verde Esmeralda',    bg: '#064e3b', sidebar: '#065f46', header: '#047857', accent: '#10b981', save: '#059669', del: '#991b1b', edit: '#92400e' },
-  { id: 'purpura-neon',  nombre: 'Púrpura Neón',       bg: '#1e1b4b', sidebar: '#312e81', header: '#4338ca', accent: '#818cf8', save: '#6366f1', del: '#991b1b', edit: '#92400e' },
-  { id: 'oscuro-carbon', nombre: 'Oscuro Carbón',      bg: '#09090b', sidebar: '#18181b', header: '#27272a', accent: '#a1a1aa', save: '#3f3f46', del: '#991b1b', edit: '#92400e' },
-  { id: 'rosado-ejec',   nombre: 'Rosado Ejecutivo',   bg: '#1f1319', sidebar: '#311c26', header: '#5e2843', accent: '#ec4899', save: '#db2777', del: '#991b1b', edit: '#92400e' },
-  { id: 'turquesa-ind',  nombre: 'Turquesa Industrial',bg: '#042f2e', sidebar: '#134e4a', header: '#0f766e', accent: '#2dd4bf', save: '#14b8a6', del: '#991b1b', edit: '#92400e' },
-  { id: 'naranja-atar',  nombre: 'Naranja Atardecer',  bg: '#2c160b', sidebar: '#43220f', header: '#9a3412', accent: '#f97316', save: '#ea580c', del: '#991b1b', edit: '#92400e' },
-  { id: 'rojo-alerta',   nombre: 'Rojo Alerta',        bg: '#2b0b0b', sidebar: '#421212', header: '#991b1b', accent: '#ef4444', save: '#dc2626', del: '#7f1d1d', edit: '#92400e' },
-  { id: 'dorado-met',    nombre: 'Dorado Metálico',    bg: '#1c1917', sidebar: '#292524', header: '#78350f', accent: '#f59e0b', save: '#d97706', del: '#991b1b', edit: '#92400e' },
-  { id: 'violeta-prof',  nombre: 'Violeta Profundo',   bg: '#20063b', sidebar: '#320b5e', header: '#581c87', accent: '#a855f7', save: '#9333ea', del: '#991b1b', edit: '#92400e' },
-  { id: 'verde-menta',   nombre: 'Verde Menta',        bg: '#022c22', sidebar: '#064e3b', header: '#065f46', accent: '#34d399', save: '#059669', del: '#991b1b', edit: '#92400e' },
-  { id: 'azul-acero',    nombre: 'Azul Acero',         bg: '#0f172a', sidebar: '#1e293b', header: '#334155', accent: '#38bdf8', save: '#0284c7', del: '#991b1b', edit: '#92400e' },
-  { id: 'cafe-madera',   nombre: 'Café Madera',        bg: '#1c1512', sidebar: '#2c221e', header: '#4e382d', accent: '#d97706', save: '#b45309', del: '#991b1b', edit: '#92400e' },
-  { id: 'gris-minim',    nombre: 'Gris Minimalista',   bg: '#111827', sidebar: '#1f2937', header: '#374151', accent: '#9ca3af', save: '#6b7280', del: '#991b1b', edit: '#92400e' },
-  { id: 'violeta-cyber', nombre: 'Violeta Cyberpunk',  bg: '#180529', sidebar: '#280a44', header: '#6b21a8', accent: '#f43f5e', save: '#e11d48', del: '#991b1b', edit: '#92400e' },
+  // ── TEMAS OSCUROS (originales) ──
+  { id: 'azul-corp',     nombre: 'Azul Corporativo',    bg: '#0f172a', sidebar: '#1e293b', header: '#2563eb', accent: '#3b82f6', save: '#1d4ed8', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#94a3b8', card: '#1e293b', border: '#334155' },
+  { id: 'verde-esm',     nombre: 'Verde Esmeralda',     bg: '#064e3b', sidebar: '#065f46', header: '#047857', accent: '#10b981', save: '#059669', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#6ee7b7', card: '#065f46', border: '#047857' },
+  { id: 'purpura-neon',  nombre: 'Púrpura Neón',        bg: '#1e1b4b', sidebar: '#312e81', header: '#4338ca', accent: '#818cf8', save: '#6366f1', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#a5b4fc', card: '#312e81', border: '#4338ca' },
+  { id: 'oscuro-carbon', nombre: 'Oscuro Carbón',       bg: '#09090b', sidebar: '#18181b', header: '#27272a', accent: '#a1a1aa', save: '#3f3f46', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#71717a', card: '#18181b', border: '#3f3f46' },
+  { id: 'rosado-ejec',   nombre: 'Rosado Ejecutivo',    bg: '#1f1319', sidebar: '#311c26', header: '#5e2843', accent: '#ec4899', save: '#db2777', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#f9a8d4', card: '#311c26', border: '#5e2843' },
+  { id: 'turquesa-ind',  nombre: 'Turquesa Industrial', bg: '#042f2e', sidebar: '#134e4a', header: '#0f766e', accent: '#2dd4bf', save: '#14b8a6', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#5eead4', card: '#134e4a', border: '#0f766e' },
+  { id: 'naranja-atar',  nombre: 'Naranja Atardecer',   bg: '#2c160b', sidebar: '#43220f', header: '#9a3412', accent: '#f97316', save: '#ea580c', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#fdba74', card: '#43220f', border: '#9a3412' },
+  { id: 'rojo-alerta',   nombre: 'Rojo Alerta',         bg: '#2b0b0b', sidebar: '#421212', header: '#991b1b', accent: '#ef4444', save: '#dc2626', del: '#7f1d1d', edit: '#92400e', text: '#e8eaf0', textDim: '#fca5a5', card: '#421212', border: '#991b1b' },
+  { id: 'dorado-met',    nombre: 'Dorado Metálico',     bg: '#1c1917', sidebar: '#292524', header: '#78350f', accent: '#f59e0b', save: '#d97706', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#fcd34d', card: '#292524', border: '#78350f' },
+  { id: 'violeta-prof',  nombre: 'Violeta Profundo',    bg: '#20063b', sidebar: '#320b5e', header: '#581c87', accent: '#a855f7', save: '#9333ea', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#d8b4fe', card: '#320b5e', border: '#581c87' },
+  { id: 'verde-menta',   nombre: 'Verde Menta',         bg: '#022c22', sidebar: '#064e3b', header: '#065f46', accent: '#34d399', save: '#059669', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#6ee7b7', card: '#064e3b', border: '#065f46' },
+  { id: 'azul-acero',    nombre: 'Azul Acero',          bg: '#0f172a', sidebar: '#1e293b', header: '#334155', accent: '#38bdf8', save: '#0284c7', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#7dd3fc', card: '#1e293b', border: '#334155' },
+  { id: 'cafe-madera',   nombre: 'Café Madera',         bg: '#1c1512', sidebar: '#2c221e', header: '#4e382d', accent: '#d97706', save: '#b45309', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#d6b799', card: '#2c221e', border: '#4e382d' },
+  { id: 'gris-minim',    nombre: 'Gris Minimalista',    bg: '#111827', sidebar: '#1f2937', header: '#374151', accent: '#9ca3af', save: '#6b7280', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#9ca3af', card: '#1f2937', border: '#374151' },
+  { id: 'violeta-cyber', nombre: 'Violeta Cyberpunk',   bg: '#180529', sidebar: '#280a44', header: '#6b21a8', accent: '#f43f5e', save: '#e11d48', del: '#991b1b', edit: '#92400e', text: '#e8eaf0', textDim: '#f9a8d4', card: '#280a44', border: '#6b21a8' },
+
+  // ── TEMAS CLAROS PROFESIONALES ──
+  {
+    id: 'corp-claro', nombre: 'Corporativo Claro', modoClaro: true,
+    bg: '#f0f4f8', sidebar: '#1e3a5f', header: '#1e3a5f',
+    accent: '#2563eb', save: '#1d4ed8', del: '#dc2626', edit: '#d97706',
+    text: '#1a2332', textDim: '#4a5568', card: '#ffffff', border: '#d1dbe8',
+  },
+  {
+    id: 'ejecutivo-gris', nombre: 'Ejecutivo Gris', modoClaro: true,
+    bg: '#f8f9fa', sidebar: '#2d3748', header: '#2d3748',
+    accent: '#4a6fa5', save: '#2b6cb0', del: '#c53030', edit: '#c05621',
+    text: '#1a202c', textDim: '#4a5568', card: '#ffffff', border: '#e2e8f0',
+  },
+  {
+    id: 'prof-celeste', nombre: 'Profesional Celeste', modoClaro: true,
+    bg: '#eef4fb', sidebar: '#1a4a7a', header: '#1a4a7a',
+    accent: '#0369a1', save: '#0284c7', del: '#dc2626', edit: '#d97706',
+    text: '#0f2942', textDim: '#374e6b', card: '#ffffff', border: '#bfdbfe',
+  },
 ];
 
 const CONFIG_DEFAULTS = {
@@ -168,15 +189,18 @@ function buildTemas() {
     const card = document.createElement('div');
     card.style.cssText = `cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid transparent;transition:border .2s`;
     card.title = t.nombre;
+    // En temas claros el sidebar es oscuro → texto claro; en oscuros igual
+    const labelColor = t.modoClaro ? '#ffffff' : t.accent;
+    const cardBg     = t.card || t.sidebar;
     card.innerHTML = `
       <div style="display:flex;height:32px">
         <div style="flex:1;background:${t.bg}"></div>
-        <div style="flex:1;background:${t.sidebar}"></div>
+        <div style="flex:1;background:${cardBg}"></div>
         <div style="flex:1;background:${t.header}"></div>
         <div style="flex:1;background:${t.accent}"></div>
       </div>
-      <div style="background:${t.sidebar};padding:5px 8px;font-size:10px;font-weight:600;color:${t.accent};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-        ${t.nombre}
+      <div style="background:${t.sidebar};padding:5px 8px;font-size:10px;font-weight:600;color:${labelColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+        ${t.modoClaro ? '☀ ' : ''}${t.nombre}
       </div>`;
     card.addEventListener('click', () => aplicarTema(t, card));
     card.addEventListener('mouseenter', () => card.style.borderColor = t.accent);
@@ -193,8 +217,14 @@ function aplicarTema(t, card) {
   currentConfig.colorSave    = t.save;
   currentConfig.colorDel     = t.del;
   currentConfig.colorEdit    = t.edit;
-  currentConfig.colorCard    = t.sidebar;
-  currentConfig.colorBorder  = t.header + '66';
+  currentConfig.colorCard    = t.card   || t.sidebar;
+  currentConfig.colorBorder  = t.border || (t.header + '66');
+  currentConfig.colorText    = t.text     || CONFIG_DEFAULTS.colorText;
+  currentConfig.colorTextDim = t.textDim  || CONFIG_DEFAULTS.colorTextDim;
+  // Celdas de tabla: claro para temas claros, oscuro para temas oscuros
+  if (t.modoClaro) {
+    currentConfig.colorTableCell = '#f0f4f8';
+  }
   applyConfig(currentConfig);
   buildColorPickers(); // refrescar pickers con nuevos valores
   updatePreview();
