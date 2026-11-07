@@ -19,10 +19,12 @@ const OT_DISCIPLINAS = [
   { codigo: 'REP',  label: 'REP',  categoria: 'REPARACIONES'         },
 ];
 
-let _otFiltro   = 'todas';
-let _otBusqueda = '';
-let _otCache    = [];
-let _atsCache   = [];
+let _otFiltro      = 'todas';
+let _otBusqueda    = '';
+let _otFiltroArea  = '';
+let _otFiltroGrupo = '';
+let _otCache       = [];
+let _atsCache      = [];
 
 /* ================================================================
    RENDER VISTA
@@ -83,6 +85,8 @@ function renderTablaControlOt() {
     const desc  = (ot.descripcion || '').toLowerCase();
     const busq  = _otBusqueda.toLowerCase();
     if (busq && !orden.includes(busq) && !desc.includes(busq)) return false;
+    if (_otFiltroArea  && (ot.area        || '') !== _otFiltroArea)  return false;
+    if (_otFiltroGrupo && (ot.grupo_planif || '') !== _otFiltroGrupo) return false;
     if (_otFiltro === 'con-ats')   return !!otEnAts[ot.orden.trim()];
     if (_otFiltro === 'sin-ats')   return !otEnAts[ot.orden.trim()];
     if (_otFiltro === 'completas') return !!ot.completada;
@@ -121,8 +125,14 @@ function renderTablaControlOt() {
       <td style="padding:7px 8px;border:1px solid var(--border);font-size:11px;${textColor};text-align:center;min-width:32px">${idx + 1}</td>
       ${celdas}
       <td style="padding:7px 10px;border:1px solid var(--border);font-weight:600;font-size:12px;${textColor};min-width:110px">${escapeHtml(orden)}</td>
+      <td style="padding:7px 8px;border:1px solid var(--border);font-size:11px;${textColor};text-align:center;min-width:50px">${escapeHtml(ot.grupo_planif||'')}</td>
       <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(ot.descripcion||'')}">${escapeHtml(ot.descripcion||'')}</td>
       <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};min-width:80px">${escapeHtml(ot.tag||'')}</td>
+      <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};min-width:80px">${escapeHtml(ot.area||'')}</td>
+      <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};min-width:120px">${escapeHtml(ot.procesos||ot.proceso||'')}</td>
+      <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};min-width:80px">${escapeHtml(ot.ubicacion||'')}</td>
+      <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(ot.sub_proceso||'')}">${escapeHtml(ot.sub_proceso||'')}</td>
+      <td style="padding:7px 10px;border:1px solid var(--border);font-size:11px;${textColor};max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(ot.grupo_equipo||'')}">${escapeHtml(ot.grupo_equipo||'')}</td>
       <td style="padding:7px 8px;border:1px solid var(--border);text-align:center;min-width:40px">
         <button onclick="toggleCompletadaOt(${ot.id},this)"
           title="${completa ? 'Marcar incompleta' : 'Marcar como completada'}"
@@ -137,13 +147,30 @@ function renderTablaControlOt() {
     </tr>`;
   }).join('');
 
+  // Opciones únicas para filtros de área y grupo
+  const areas  = [...new Set(_otCache.map(o => o.area).filter(Boolean))].sort();
+  const grupos = [...new Set(_otCache.map(o => o.grupo_planif).filter(Boolean))].sort();
+
+  const selArea  = `<select onchange="filtrarOtPorArea(this.value)" style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px;cursor:pointer">
+    <option value="">Todas las áreas</option>
+    ${areas.map(a=>`<option value="${escapeHtml(a)}" ${_otFiltroArea===a?'selected':''}>${escapeHtml(a)}</option>`).join('')}
+  </select>`;
+  const selGrupo = `<select onchange="filtrarOtPorGrupo(this.value)" style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px;cursor:pointer">
+    <option value="">Todos los grupos</option>
+    ${grupos.map(g=>`<option value="${escapeHtml(g)}" ${_otFiltroGrupo===g?'selected':''}>${escapeHtml(g)}</option>`).join('')}
+  </select>`;
+
   container.innerHTML = `
     <!-- Filtros -->
-    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
       <button onclick="cambiarFiltroOt('todas')"    class="btn btn-sm ${_otFiltro==='todas'   ?'btn-primary':'btn-ghost'}">Todas (${totalOts})</button>
       <button onclick="cambiarFiltroOt('con-ats')"  class="btn btn-sm ${_otFiltro==='con-ats' ?'btn-primary':'btn-ghost'}" style="${_otFiltro!=='con-ats'?'color:#10b981':''}">✅ Con ATS (${totalConAts})</button>
       <button onclick="cambiarFiltroOt('sin-ats')"  class="btn btn-sm ${_otFiltro==='sin-ats' ?'btn-primary':'btn-ghost'}" style="${_otFiltro!=='sin-ats'?'color:#f87171':''}">❌ Sin ATS (${totalSinAts})</button>
       <button onclick="cambiarFiltroOt('completas')" class="btn btn-sm ${_otFiltro==='completas'?'btn-primary':'btn-ghost'}" style="${_otFiltro!=='completas'?'color:#9ca3af':''}">☑ Completas (${totalCompletas})</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      ${selArea} ${selGrupo}
+      ${_otFiltroArea||_otFiltroGrupo?`<button onclick="limpiarFiltrosOt()" class="btn btn-ghost btn-sm">✕ Limpiar</button>`:''}
     </div>
 
     <!-- Tabla con scroll horizontal -->
@@ -154,22 +181,31 @@ function renderTablaControlOt() {
             <th style="background:var(--header);padding:8px 6px;text-align:center;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:32px">#</th>
             ${thDisc}
             <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:110px">ORDEN</th>
+            <th style="background:var(--header);padding:8px 6px;text-align:center;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:50px">G.PLANIF</th>
             <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:200px">TEXTO BREVE</th>
             <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:80px">TAG</th>
+            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:80px">ÁREA</th>
+            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:120px">PROCESOS</th>
+            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:80px">UBICACIÓN</th>
+            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:150px">SUB-PROCESO</th>
+            <th style="background:var(--header);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:120px">GRUPO EQUIPO</th>
             <th style="background:var(--header);padding:8px 6px;text-align:center;font-size:10px;font-weight:700;color:var(--text);border:1px solid var(--border);min-width:40px">✓</th>
             <th style="background:var(--header);padding:8px 6px;border:1px solid var(--border);min-width:36px"></th>
           </tr>
         </thead>
         <tbody>
-          ${filas || `<tr><td colspan="${OT_DISCIPLINAS.length + 6}" style="text-align:center;padding:32px;color:var(--text-dim)">No hay OTs que mostrar</td></tr>`}
+          ${filas || `<tr><td colspan="${OT_DISCIPLINAS.length + 12}" style="text-align:center;padding:32px;color:var(--text-dim)">No hay OTs que mostrar</td></tr>`}
         </tbody>
       </table>
     </div>`;
 }
 
 /* ── Filtros ── */
-function cambiarFiltroOt(filtro) { _otFiltro = filtro; renderTablaControlOt(); }
-function filtrarControlOt(q)     { _otBusqueda = q;    renderTablaControlOt(); }
+function cambiarFiltroOt(filtro)    { _otFiltro = filtro;      renderTablaControlOt(); }
+function filtrarControlOt(q)        { _otBusqueda = q;          renderTablaControlOt(); }
+function filtrarOtPorArea(area)     { _otFiltroArea = area;     renderTablaControlOt(); }
+function filtrarOtPorGrupo(grupo)   { _otFiltroGrupo = grupo;   renderTablaControlOt(); }
+function limpiarFiltrosOt()         { _otFiltroArea = ''; _otFiltroGrupo = ''; renderTablaControlOt(); }
 
 /* ================================================================
    TOGGLE COMPLETADA
@@ -458,6 +494,9 @@ Views.controlOt = () => renderControlOt();
 window.renderControlOt               = renderControlOt;
 window.cambiarFiltroOt               = cambiarFiltroOt;
 window.filtrarControlOt              = filtrarControlOt;
+window.filtrarOtPorArea              = filtrarOtPorArea;
+window.filtrarOtPorGrupo             = filtrarOtPorGrupo;
+window.limpiarFiltrosOt              = limpiarFiltrosOt;
 window.nuevaOtManual                 = nuevaOtManual;
 window.cargarExcelOt                 = cargarExcelOt;
 window.preCargarOtsDesdeServidor     = preCargarOtsDesdeServidor;
