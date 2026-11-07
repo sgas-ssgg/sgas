@@ -468,8 +468,16 @@ async function agregarHojaControlOtAlReporte(wb) {
   const sSi   = { ...sDato, fill: { type: 'pattern', pattern: 'solid', fgColor: VERD }, font: { ...sDato.font, color: { argb: 'FF10B981' }, bold: true } };
   const sNo   = { ...sDato, fill: { type: 'pattern', pattern: 'solid', fgColor: ROJO }, font: { ...sDato.font, color: { argb: 'FFEF4444' } } };
 
-  ws.columns = [{ width: 6 }, ...OT_DISCIPLINAS.map(() => ({ width: 7 })), { width: 14 }, { width: 40 }, { width: 14 }];
-  const cabRow = ws.addRow(['Item', ...OT_DISCIPLINAS.map(d => d.codigo), 'Orden', 'Texto breve', 'TAG']);
+  ws.columns = [
+    { width: 6 }, ...OT_DISCIPLINAS.map(() => ({ width: 7 })),
+    { width: 14 }, { width: 8 }, { width: 40 }, { width: 14 },
+    { width: 12 }, { width: 18 }, { width: 12 }, { width: 22 }, { width: 20 },
+  ];
+  const cabRow = ws.addRow([
+    'Item', ...OT_DISCIPLINAS.map(d => d.codigo),
+    'Orden', 'G.PLANIF', 'Texto breve', 'TAG',
+    'Área', 'Procesos', 'Ubicación', 'Sub-Proceso', 'Grupo Equipo'
+  ]);
   cabRow.height = 24;
   cabRow.eachCell(c => { c.style = sCab; });
 
@@ -478,14 +486,35 @@ async function agregarHojaControlOtAlReporte(wb) {
     const cats     = otEnAts[orden] || new Set();
     const completa = !!ot.completada;
     const sBase    = completa ? sComp : sDato;
-    const row = ws.addRow([idx + 1, ...OT_DISCIPLINAS.map(d => cats.has(d.categoria.toUpperCase()) ? '✅' : '❌'), orden, ot.descripcion || '', ot.tag || '']);
+    const sLeft    = { ...sBase, alignment: { vertical: 'middle', horizontal: 'left', wrapText: true } };
+    const row = ws.addRow([
+      idx + 1,
+      ...OT_DISCIPLINAS.map(d => cats.has(d.categoria.toUpperCase()) ? '✅' : '❌'),
+      orden,
+      ot.grupo_planif  || '',
+      ot.descripcion   || '',
+      ot.tag           || '',
+      ot.area          || '',
+      ot.procesos      || ot.proceso || '',
+      ot.ubicacion     || '',
+      ot.sub_proceso   || '',
+      ot.grupo_equipo  || '',
+    ]);
     row.height = 18;
     row.getCell(1).style = sBase;
-    OT_DISCIPLINAS.forEach((d, i) => { row.getCell(2 + i).style = completa ? sComp : (cats.has(d.categoria.toUpperCase()) ? sSi : sNo); });
+    OT_DISCIPLINAS.forEach((d, i) => {
+      row.getCell(2 + i).style = completa ? sComp : (cats.has(d.categoria.toUpperCase()) ? sSi : sNo);
+    });
     const off = 2 + OT_DISCIPLINAS.length;
     row.getCell(off).style     = { ...sBase, font: { ...sBase.font, bold: true } };
-    row.getCell(off + 1).style = { ...sBase, alignment: { vertical: 'middle', horizontal: 'left', wrapText: true } };
-    row.getCell(off + 2).style = sBase;
+    row.getCell(off + 1).style = sBase;
+    row.getCell(off + 2).style = sLeft;
+    row.getCell(off + 3).style = sBase;
+    row.getCell(off + 4).style = sBase;
+    row.getCell(off + 5).style = sBase;
+    row.getCell(off + 6).style = sBase;
+    row.getCell(off + 7).style = sLeft;
+    row.getCell(off + 8).style = sLeft;
   });
 }
 
