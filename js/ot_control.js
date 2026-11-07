@@ -232,23 +232,137 @@ async function toggleCompletadaOt(id, btn) {
 }
 
 /* ================================================================
-   AGREGAR OT MANUAL
+   AGREGAR OT MANUAL — modal con todos los campos
    ================================================================ */
 function nuevaOtManual() {
-  openModal('Nueva OT', 'Número de Orden', 'Ej: 1000013506',
-    async (orden) => {
-      const o = orden.trim();
-      if (!/^\d+$/.test(o) || o.length < 7) {
-        toast('Ingresá un número de OT válido', 'error'); return;
-      }
-      try {
-        await Storage.OtControl.save({ orden: o, descripcion: '', tag: '', area: '', proceso: '' });
-        toast('✓ OT agregada');
-        [_otCache] = await Promise.all([Storage.OtControl.getAll()]);
-        renderTablaControlOt();
-      } catch(e) { toast('Error al agregar OT', 'error'); }
+  // Construir modal con todos los campos
+  const modalHtml = `
+    <div id="modal-nueva-ot" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px">
+      <div style="background:#ffffff;border-radius:12px;padding:28px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+        <h3 style="margin:0 0 20px;font-size:16px;color:#1a2332;font-weight:700">➕ Agregar OT</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+          <div style="grid-column:1/-1">
+            <label style="display:block;font-size:11px;font-weight:700;color:#4a5568;margin-bottom:4px">N° ORDEN <span style="color:#ef4444">*</span></label>
+            <input id="not-orden" type="text" placeholder="Ej: 2000138113" maxlength="20"
+              style="width:100%;padding:8px 10px;border:1px solid #c8d5e3;border-radius:6px;font-size:13px;color:#1a2332;box-sizing:border-box">
+          </div>
+
+          <div style="grid-column:1/-1">
+            <label style="display:block;font-size:11px;font-weight:700;color:#4a5568;margin-bottom:4px">TEXTO BREVE / DESCRIPCIÓN</label>
+            <input id="not-desc" type="text" placeholder="Descripción de la orden"
+              style="width:100%;padding:8px 10px;border:1px solid #c8d5e3;border-radius:6px;font-size:13px;color:#1a2332;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#4a5568;margin-bottom:4px">TAG</label>
+            <input id="not-tag" type="text" placeholder="Ej: SDV-1025"
+              style="width:100%;padding:8px 10px;border:1px solid #c8d5e3;border-radius:6px;font-size:13px;color:#1a2332;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#4a5568;margin-bottom:4px">G.PLANIF</label>
+            <input id="not-grupo" type="text" placeholder="Ej: IC"
+              style="width:100%;padding:8px 10px;border:1px solid #c8d5e3;border-radius:6px;font-size:13px;color:#1a2332;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#4a5568;margin-bottom:4px">ÁREA</label>
+            <input id="not-area" type="text" placeholder="Ej: Pro (1)"
+              style="width:100%;padding:8px 10px;border:1px solid #c8d5e3;border-radius:6px;font-size:13px;color:#1a2332;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#4a5568;margin-bottom:4px">PROCESOS</label>
+            <input id="not-procesos" type="text" placeholder="Ej: Fraccionamiento 1"
+              style="width:100%;padding:8px 10px;border:1px solid #c8d5e3;border-radius:6px;font-size:13px;color:#1a2332;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#4a5568;margin-bottom:4px">UBICACIÓN</label>
+            <input id="not-ubicacion" type="text" placeholder="Ej: Planta 1"
+              style="width:100%;padding:8px 10px;border:1px solid #c8d5e3;border-radius:6px;font-size:13px;color:#1a2332;box-sizing:border-box">
+          </div>
+
+          <div style="grid-column:1/-1">
+            <label style="display:block;font-size:11px;font-weight:700;color:#4a5568;margin-bottom:4px">SUB-PROCESO</label>
+            <input id="not-subproceso" type="text" placeholder="Ej: Debutanizer Reflux Accumulator"
+              style="width:100%;padding:8px 10px;border:1px solid #c8d5e3;border-radius:6px;font-size:13px;color:#1a2332;box-sizing:border-box">
+          </div>
+
+          <div style="grid-column:1/-1">
+            <label style="display:block;font-size:11px;font-weight:700;color:#4a5568;margin-bottom:4px">GRUPO EQUIPO</label>
+            <input id="not-grupoequipo" type="text" placeholder="Ej: Prev- IC 1A-SDV"
+              style="width:100%;padding:8px 10px;border:1px solid #c8d5e3;border-radius:6px;font-size:13px;color:#1a2332;box-sizing:border-box">
+          </div>
+
+        </div>
+
+        <div id="not-error" style="display:none;margin-top:12px;padding:8px 12px;background:#fee2e2;border-radius:6px;color:#dc2626;font-size:12px"></div>
+
+        <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+          <button onclick="cerrarModalNuevaOt()"
+            style="padding:8px 20px;border:1px solid #c8d5e3;border-radius:6px;background:#ffffff;color:#4a5568;font-size:13px;cursor:pointer">
+            Cancelar
+          </button>
+          <button onclick="guardarNuevaOt()"
+            style="padding:8px 20px;border:none;border-radius:6px;background:#2d4a6e;color:#ffffff;font-size:13px;font-weight:600;cursor:pointer">
+            ➕ Agregar OT
+          </button>
+        </div>
+      </div>
+    </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  setTimeout(() => document.getElementById('not-orden')?.focus(), 50);
+}
+
+function cerrarModalNuevaOt() {
+  document.getElementById('modal-nueva-ot')?.remove();
+}
+
+async function guardarNuevaOt() {
+  const orden = (document.getElementById('not-orden')?.value || '').trim();
+  const errDiv = document.getElementById('not-error');
+
+  if (!orden) {
+    errDiv.textContent = 'El número de orden es obligatorio.';
+    errDiv.style.display = 'block';
+    return;
+  }
+  if (!/^\d+$/.test(orden) || orden.length < 7) {
+    errDiv.textContent = 'Ingresá un número de OT válido (mínimo 7 dígitos).';
+    errDiv.style.display = 'block';
+    return;
+  }
+
+  const datos = {
+    orden,
+    descripcion:  document.getElementById('not-desc')?.value.trim()        || '',
+    tag:          document.getElementById('not-tag')?.value.trim()          || '',
+    grupo_planif: document.getElementById('not-grupo')?.value.trim()        || '',
+    area:         document.getElementById('not-area')?.value.trim()         || '',
+    procesos:     document.getElementById('not-procesos')?.value.trim()     || '',
+    ubicacion:    document.getElementById('not-ubicacion')?.value.trim()    || '',
+    sub_proceso:  document.getElementById('not-subproceso')?.value.trim()   || '',
+    grupo_equipo: document.getElementById('not-grupoequipo')?.value.trim()  || '',
+  };
+
+  try {
+    await Storage.OtControl.save(datos);
+    cerrarModalNuevaOt();
+    toast(`✓ OT ${orden} agregada`);
+    _otCache = await Storage.OtControl.getAll();
+    renderTablaControlOt();
+  } catch(e) {
+    const msg = e?.message || '';
+    if (msg.includes('409') || msg.includes('Ya existe')) {
+      errDiv.textContent = `La OT ${orden} ya existe en la lista.`;
+    } else {
+      errDiv.textContent = 'Error al guardar. Intentá de nuevo.';
     }
-  );
+    errDiv.style.display = 'block';
+  }
 }
 
 /* ================================================================
@@ -536,6 +650,8 @@ window.filtrarOtPorArea              = filtrarOtPorArea;
 window.filtrarOtPorGrupo             = filtrarOtPorGrupo;
 window.limpiarFiltrosOt              = limpiarFiltrosOt;
 window.nuevaOtManual                 = nuevaOtManual;
+window.cerrarModalNuevaOt            = cerrarModalNuevaOt;
+window.guardarNuevaOt                = guardarNuevaOt;
 window.cargarExcelOt                 = cargarExcelOt;
 window.preCargarOtsDesdeServidor     = preCargarOtsDesdeServidor;
 window.eliminarOt                    = eliminarOt;

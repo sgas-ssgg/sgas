@@ -141,6 +141,7 @@ const Storage = (() => {
       if (res.status === 401) throw new Error('AUTH: Sin autorización para realizar esta acción.');
       if (res.status === 404) throw new Error('NOTFOUND: El registro no fue encontrado.');
       if (res.status === 400) throw new Error(`VALIDACION: ${err.error || 'Datos inválidos.'}`);
+      if (res.status === 409) throw new Error(`409: ${err.error || 'Registro duplicado.'}`);
       throw new Error(`SERVER: Error del servidor (${res.status}): ${err.error || res.statusText}`);
     }
     return res.json();
