@@ -385,10 +385,15 @@ async function cargarExcelOt(input) {
         if (!orden || !/^\d+$/.test(orden)) continue;
         ots.push({
           orden,
-          descripcion: String(row[11] || '').trim(),
-          tag:         String(row[13] || '').trim(),
-          area:        String(row[15] || '').trim(),
-          proceso:     String(row[16] || '').trim(),
+          grupo_planif: String(row[10] || '').trim(),
+          descripcion:  String(row[11] || '').trim(),
+          ubicac_tec:   String(row[12] || '').trim(),
+          tag:          String(row[13] || '').trim(),
+          area:         String(row[14] || '').trim(),
+          procesos:     String(row[15] || '').trim(),
+          ubicacion:    String(row[16] || '').trim(),
+          sub_proceso:  String(row[17] || '').trim(),
+          grupo_equipo: String(row[18] || '').trim(),
         });
       }
       if (ots.length === 0) { toast('No se encontraron OTs válidas', 'error'); input.value = ''; return; }
@@ -422,10 +427,15 @@ async function preCargarOtsDesdeServidor() {
       if (!orden || !/^\d+$/.test(orden)) continue;
       ots.push({
         orden,
-        descripcion: String(row[11] || '').trim(),
-        tag:         String(row[13] || '').trim(),
-        area:        String(row[15] || '').trim(),
-        proceso:     String(row[16] || '').trim(),
+        grupo_planif: String(row[10] || '').trim(),
+        descripcion:  String(row[11] || '').trim(),
+        ubicac_tec:   String(row[12] || '').trim(),
+        tag:          String(row[13] || '').trim(),
+        area:         String(row[14] || '').trim(),
+        procesos:     String(row[15] || '').trim(),
+        ubicacion:    String(row[16] || '').trim(),
+        sub_proceso:  String(row[17] || '').trim(),
+        grupo_equipo: String(row[18] || '').trim(),
       });
     }
     if (ots.length === 0) { toast('No se encontraron OTs', 'error'); return; }
