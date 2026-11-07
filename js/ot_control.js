@@ -122,10 +122,15 @@ function renderTablaControlOt() {
 
     const celdas = OT_DISCIPLINAS.map(d => {
       const tiene = cats.has(d.categoria.toUpperCase());
-      const bg    = completa ? BK : tiene ? '#dcfce7' : BW;
-      return `<td style="text-align:center;padding:5px 4px;${td};background:${bg}">
-        <span style="font-size:13px;${completa?'opacity:.5':''}">${tiene ? '✅' : '❌'}</span>
-      </td>`;
+      if (completa) {
+        return `<td style="text-align:center;padding:5px 4px;${td};background:#d1d5db"></td>`;
+      }
+      if (tiene) {
+        return `<td style="text-align:center;padding:5px 4px;${td};background:#ffffff">
+          <span style="font-size:14px;font-weight:700;color:#2563eb">✔</span>
+        </td>`;
+      }
+      return `<td style="text-align:center;padding:5px 4px;${td};background:#94a3b8"></td>`;
     }).join('');
 
     const cs = `padding:7px 8px;${td};background:${rowBg};font-size:11px;color:${txtCol}`;
