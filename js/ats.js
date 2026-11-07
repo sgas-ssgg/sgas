@@ -307,7 +307,7 @@ function leerFilasDOM() {
 /* ================================================================
    FICHA — GUARDAR / EDITAR
    ================================================================ */
-async function guardarFicha() {
+async function guardarFicha(marcarActualizado = false) {
   const ficha = AtsState.fichaActual;
   if (!ficha) return;
 
@@ -331,13 +331,15 @@ async function guardarFicha() {
     contacto:   document.getElementById('f-emerg-contacto')?.value.trim()   || '',
   };
   ficha.estado = 'guardado';
+  // Si se pidió marcar como actualizado, forzar updated_at en el servidor
+  ficha._marcarActualizado = marcarActualizado;
 
   try {
     const id = await Storage.ATS.save(ficha);
     if (!ficha.id) ficha.id = id;
     AtsState.modo = 'saved';
     renderFicha();
-    toast('✓ Ficha guardada correctamente');
+    toast(marcarActualizado ? '✅ Ficha guardada y marcada como Actualizada' : '✓ Ficha guardada correctamente');
   } catch(e) {
     const { texto } = Storage.mensajeError(e);
     toast(`Error al guardar: ${texto}`, 'error');
@@ -1397,6 +1399,11 @@ async function descargarExcelReporteParada() {
   totRow.eachCell(c => { c.style = { ...sCab, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A2035' } } }; });
 
   // Descargar
+  // Agregar hoja Control OT si está disponible
+  if (typeof agregarHojaControlOtAlReporte === 'function') {
+    await agregarHojaControlOtAlReporte(wb);
+  }
+
   const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
   const buffer = await wb.xlsx.writeBuffer();
   const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });

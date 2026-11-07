@@ -71,6 +71,7 @@ init().then(() => {
   app.use('/api/categorias',  require('./routes/categorias'));
   app.use('/api/sheets',      require('./routes/sheets'));
   app.use('/api/checklists',  require('./routes/checklists'));
+  app.use('/api/ot-control',  require('./routes/ot_control'));
 
   app.listen(PORT, () => {
     console.log(`SGAS Server corriendo en puerto ${PORT}`);

@@ -68,11 +68,13 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   if (!validarId(req, res)) return;
   try {
-    const { nombre, categoria, estado, filas, observaciones, tipo, emergencia, codigo, ot_tags } = req.body;
+    const { nombre, categoria, estado, filas, observaciones, tipo, emergencia, codigo, ot_tags, _marcarActualizado } = req.body;
     if (!nombre || !categoria) return res.status(400).json({ error: 'nombre y categoria requeridos' });
+    // Solo actualiza updated_at si se pidió marcar como actualizado
+    const updatedAtSQL = _marcarActualizado ? 'updated_at=NOW(),' : '';
     const result = await pool.query(
       `UPDATE ats SET nombre=$1, categoria=$2, estado=$3, filas=$4, observaciones=$5,
-       tipo=$6, emergencia=$7, updated_at=NOW(), codigo=$8, ot_tags=$9
+       tipo=$6, emergencia=$7, ${updatedAtSQL} codigo=$8, ot_tags=$9
        WHERE id=$10 RETURNING *`,
       [
         nombre, categoria, estado||'guardado',

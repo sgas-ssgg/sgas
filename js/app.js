@@ -32,6 +32,7 @@ const ROUTES = {
   'rescatista':           () => Views.genericoLista('rescatista',           'Rescatista'),
   'actividades-criticas': () => Views.genericoLista('actividades-criticas', 'Actividades Críticas'),
   'reporte_parada':       () => Views.reporteParada(),
+  'control_ot':           () => Views.controlOt(),
 };
 
 /* ── Rutas de checklists por categoría ── */
@@ -444,6 +445,7 @@ const ACCESOS_RAPIDOS = [
   { id: 'checklists',         label: 'Checklists',           icon: '✅', hash: 'checklists',          sidebarId: 'sidebar-checklists'  },
   { id: 'equipos',            label: 'Equipos / TAG',        icon: '🔧', hash: 'equipos',             sidebarId: 'sidebar-equipos'     },
   { id: 'reporte-parada',     label: 'Reporte Parada Planta',icon: '📊', hash: 'reporte_parada',      sidebarId: null                  },
+  { id: 'control-ot',        label: 'Control de OT',        icon: '📋', hash: 'control_ot',           sidebarId: null                  },
 ];
 
 const DASH_STORAGE_KEY = 'sgas_dash_accesos'; // qué accesos están activos en el dashboard

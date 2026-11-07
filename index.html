@@ -191,6 +191,27 @@
       </div>
 
       <!-- ════════════════════════════
+           VISTA: CONTROL DE OT
+      ════════════════════════════ -->
+      <div class="view" id="view-control_ot">
+        <div class="view-header">
+          <div class="view-title">📋 Control de OT — Parada de Planta</div>
+          <div class="view-actions">
+            <input class="search-box" id="ot-search" placeholder="🔍 Buscar OT..."
+                   oninput="filtrarControlOt(this.value)" />
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+              📁 Cargar Excel
+              <input type="file" id="ot-excel-input" accept=".xlsx,.xls" style="display:none"
+                     onchange="cargarExcelOt(this)" />
+            </label>
+            <button class="btn btn-primary btn-sm" onclick="nuevaOtManual()">＋ Agregar OT</button>
+            <button class="btn btn-save btn-sm" onclick="descargarExcelControlOt()">📥 Excel</button>
+          </div>
+        </div>
+        <div id="control-ot-content"></div>
+      </div>
+
+      <!-- ════════════════════════════
            VISTA: REPORTE PARADA DE PLANTA
       ════════════════════════════ -->
       <div class="view" id="view-reporte_parada">
@@ -244,7 +265,8 @@
             <button class="btn btn-ghost"   onclick="exportarExcelAts()">📊 Descargar Excel</button>
           </div>
           <div class="view-actions" id="ficha-actions-edit">
-            <button class="btn btn-save" onclick="guardarFicha()">💾 Guardar</button>
+            <button class="btn btn-save" onclick="guardarFicha(false)">💾 Guardar</button>
+            <button class="btn btn-primary" onclick="guardarFicha(true)" title="Guarda y marca como Actualizado">✅ Guardar y Actualizar</button>
             <button class="btn btn-ghost" onclick="history.back()">✕ Cancelar</button>
           </div>
         </div>
@@ -595,6 +617,7 @@
 <script src="js/config.js?v=3"></script>
 <script src="js/equipos.js?v=3"></script>
 <script src="js/checklists.js?v=3"></script>
+<script src="js/ot_control.js?v=3"></script>
 
 </body>
 </html>

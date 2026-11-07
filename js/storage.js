@@ -161,7 +161,7 @@ const Storage = (() => {
      INDEXEDDB (modo local)
      ================================================================ */
   const DB_NAME    = 'SGAS_DB';
-  const DB_VERSION = 3;
+  const DB_VERSION = 4;
 
   function initIndexedDB() {
     return new Promise((resolve, reject) => {
@@ -185,6 +185,10 @@ const Storage = (() => {
           database.createObjectStore('sheets', { keyPath: 'id', autoIncrement: true });
         if (!database.objectStoreNames.contains('checklists'))
           database.createObjectStore('checklists', { keyPath: 'id', autoIncrement: true });
+        if (!database.objectStoreNames.contains('ot_control')) {
+          const s = database.createObjectStore('ot_control', { keyPath: 'id', autoIncrement: true });
+          s.createIndex('orden', 'orden', { unique: true });
+        }
       };
       req.onsuccess = (e) => { db = e.target.result; resolve(db); };
       req.onerror   = (e) => reject(e.target.error);
@@ -510,6 +514,29 @@ const Storage = (() => {
     },
   };
 
-  return { init, reconectar, usarSinConexion, getModo, mensajeError, ATS, Emergencias, Documentos, Config, Categorias, Sheets, Checklists };
+  /* ================================================================
+     API PÚBLICA — OT CONTROL
+     ================================================================ */
+  const OtControl = {
+    getAll: async () => {
+      if (modoRed) return apiFetch('/api/ot-control');
+      return idbGetAll('ot_control');
+    },
+    save: async (ot) => {
+      if (modoRed) return apiFetch('/api/ot-control', { method: 'POST', body: ot });
+      return idbSave('ot_control', ot);
+    },
+    saveBulk: async (ots) => {
+      if (modoRed) return apiFetch('/api/ot-control/bulk', { method: 'POST', body: { ots } });
+      // Modo local: guardar una por una
+      return Promise.all(ots.map(ot => idbSave('ot_control', ot)));
+    },
+    remove: async (id) => {
+      if (modoRed) return apiFetch(`/api/ot-control/${id}`, { method: 'DELETE' });
+      return idbRemove('ot_control', id);
+    },
+  };
+
+  return { init, reconectar, usarSinConexion, getModo, mensajeError, ATS, Emergencias, Documentos, Config, Categorias, Sheets, Checklists, OtControl };
 
 })();

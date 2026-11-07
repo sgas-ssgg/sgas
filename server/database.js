@@ -103,6 +103,18 @@ async function init() {
 
     -- Eliminar constraint único solo por nombre (legacy) para permitir mismo nombre en distintos tipos
     ALTER TABLE categorias DROP CONSTRAINT IF EXISTS categorias_nombre_key;
+
+    -- Tabla control de OT para Parada de Planta
+    CREATE TABLE IF NOT EXISTS ot_control (
+      id          SERIAL PRIMARY KEY,
+      orden       TEXT    NOT NULL UNIQUE,
+      descripcion TEXT    NOT NULL DEFAULT '',
+      tag         TEXT    NOT NULL DEFAULT '',
+      area        TEXT    NOT NULL DEFAULT '',
+      proceso     TEXT    NOT NULL DEFAULT '',
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_ot_control_orden ON ot_control(orden);
   `);
   console.log('Base de datos inicializada');
 }
