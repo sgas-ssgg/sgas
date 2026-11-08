@@ -1183,9 +1183,10 @@ async function renderReporteParada() {
   const totalFavoritos = fichasFiltradas.filter(f => f.favorito).length;
 
   // Actividad de HOY (siempre del total, no del filtro)
-  const hoy     = new Date().toISOString().slice(0, 10);
-  const nuevosHoy    = fichas.filter(f =>  f.esNuevo && (f.fecha_creacion||'').slice(0,10) === hoy);
-  const actualizHoy  = fichas.filter(f => !f.esNuevo && (f.fecha_actualizacion||f.fecha_creacion||'').slice(0,10) === hoy);
+  const _d      = new Date();
+  const hoy     = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
+  const nuevosHoy   = fichas.filter(f =>  f.esNuevo && f.created_at && new Date(f.created_at).toLocaleDateString('en-CA') === hoy);
+  const actualizHoy = fichas.filter(f => !f.esNuevo && f.updated_at && new Date(f.updated_at).toLocaleDateString('en-CA') === hoy);
 
   // Agrupar actividad de hoy por categoría
   const catNuevosHoy   = {};
