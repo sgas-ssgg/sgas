@@ -9,7 +9,141 @@ const AtsState = {
   tipo:      'ats',
   fichaActual: null,
   modo: 'edit',
+  _hayDirty:   false,   // hay cambios sin guardar
+  _timerDraft: null,    // timer autoguardado
 };
+
+/* ================================================================
+   BORRADOR AUTOMÁTICO — localStorage
+   ================================================================ */
+const DRAFT_KEY = 'sgas_ats_draft';
+
+function draftGuardar() {
+  const ficha = AtsState.fichaActual;
+  if (!ficha || AtsState.modo !== 'edit') return;
+  // Leer DOM antes de guardar
+  try {
+    const snap = {
+      ...ficha,
+      nombre:       document.getElementById('f-nombre')?.value.trim()        || ficha.nombre,
+      codigo:       document.getElementById('f-codigo')?.value.trim()         || ficha.codigo,
+      observaciones:document.getElementById('f-observaciones')?.value.trim() || ficha.observaciones,
+      filas:        leerFilasDOM(),
+      ot_tags:      leerOtTagsDOM(),
+      emergencia: {
+        reunion:    document.getElementById('f-emerg-reunion')?.value.trim()    || '',
+        alarmas:    document.getElementById('f-emerg-alarmas')?.value.trim()    || '',
+        extintores: document.getElementById('f-emerg-extintores')?.value.trim() || '',
+        lavaojos:   document.getElementById('f-emerg-lavaojos')?.value.trim()   || '',
+        contacto:   document.getElementById('f-emerg-contacto')?.value.trim()   || '',
+      },
+      _draftTs: Date.now(),
+    };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(snap));
+    AtsState._hayDirty = true;
+    // Mostrar indicador visual
+    const ind = document.getElementById('draft-indicator');
+    if (ind) { ind.textContent = '💾 Borrador guardado'; ind.style.color = '#10b981'; }
+  } catch(e) {}
+}
+
+function draftLimpiar() {
+  localStorage.removeItem(DRAFT_KEY);
+  AtsState._hayDirty = false;
+  clearInterval(AtsState._timerDraft);
+  AtsState._timerDraft = null;
+  const ind = document.getElementById('draft-indicator');
+  if (ind) ind.textContent = '';
+}
+
+function draftObtener() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function draftIniciarTimer() {
+  if (AtsState._timerDraft) clearInterval(AtsState._timerDraft);
+  AtsState._timerDraft = setInterval(() => {
+    if (AtsState.modo === 'edit') draftGuardar();
+  }, 30000); // cada 30 segundos
+}
+
+function draftDetenerTimer() {
+  if (AtsState._timerDraft) clearInterval(AtsState._timerDraft);
+  AtsState._timerDraft = null;
+}
+
+/* ── Alerta antes de salir de la ficha con cambios sin guardar ── */
+function draftChequearSalida(callback) {
+  if (!AtsState._hayDirty || AtsState.modo !== 'edit') {
+    callback();
+    return;
+  }
+  // Modal de confirmación
+  const existente = document.getElementById('modal-salida-draft');
+  if (existente) existente.remove();
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="modal-salida-draft" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px">
+      <div style="background:#ffffff;border-radius:12px;padding:28px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center">
+        <div style="font-size:36px;margin-bottom:12px">⚠️</div>
+        <div style="font-size:16px;font-weight:700;color:#1a2332;margin-bottom:8px">Tenés cambios sin guardar</div>
+        <div style="font-size:13px;color:#4a5568;margin-bottom:24px">Si salís ahora, se perderán los cambios. Hay un borrador guardado automáticamente que podés recuperar.</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button onclick="document.getElementById('modal-salida-draft').remove()"
+            style="padding:10px;border:none;border-radius:8px;background:#2d4a6e;color:#fff;font-size:14px;font-weight:600;cursor:pointer">
+            ✏️ Quedarme y seguir editando
+          </button>
+          <button onclick="draftRecuperarYAbrir(); document.getElementById('modal-salida-draft').remove();"
+            style="padding:10px;border:1px solid #2563eb;border-radius:8px;background:#eff6ff;color:#2563eb;font-size:14px;cursor:pointer">
+            💾 Recuperar borrador guardado
+          </button>
+          <button onclick="draftLimpiar(); document.getElementById('modal-salida-draft').remove(); (${callback.toString()})()"
+            style="padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#6b7280;font-size:13px;cursor:pointer">
+            🚪 Salir sin guardar
+          </button>
+        </div>
+      </div>
+    </div>`);
+}
+
+function draftRecuperarYAbrir() {
+  const draft = draftObtener();
+  if (!draft) { toast('No hay borrador guardado', 'error'); return; }
+  const ts = new Date(draft._draftTs).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  AtsState.fichaActual = draft;
+  AtsState.modo = 'edit';
+  renderFicha();
+  toast(`✓ Borrador recuperado (guardado a las ${ts})`);
+}
+
+/* ── Mostrar aviso de borrador al entrar a edición ── */
+function draftChequearAlAbrir(fichaId) {
+  const draft = draftObtener();
+  if (!draft) return;
+  // Si el borrador es de esta misma ficha (o es nueva)
+  const mismaFicha = (!fichaId && !draft.id) || (fichaId && draft.id === fichaId);
+  if (!mismaFicha) return;
+  const ts = new Date(draft._draftTs).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  const mins = Math.round((Date.now() - draft._draftTs) / 60000);
+  const tiempo = mins < 1 ? 'hace menos de 1 min' : `hace ${mins} min`;
+  // Banner en la ficha
+  setTimeout(() => {
+    const banner = document.getElementById('draft-banner');
+    if (!banner) return;
+    banner.innerHTML = `
+      <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <span style="font-size:20px">💾</span>
+        <div style="flex:1;font-size:12px;color:#92400e">
+          <strong>Borrador disponible</strong> — guardado ${tiempo} (${ts})
+        </div>
+        <button onclick="draftRecuperarYAbrir()" style="background:#f59e0b;border:none;border-radius:6px;color:#fff;padding:5px 12px;font-size:12px;cursor:pointer;font-weight:600">Recuperar</button>
+        <button onclick="draftLimpiar();this.closest('div').parentElement.remove()" style="background:none;border:none;color:#92400e;cursor:pointer;font-size:16px">✕</button>
+      </div>`;
+    banner.style.display = '';
+  }, 300);
+}
 
 /* ================================================================
    LISTA DE FICHAS
@@ -241,6 +375,21 @@ function renderFicha() {
 
   renderTablaAts(ficha.filas || [], editable);
   showView('ats_ficha');
+
+  // Arrancar autoguardado si estamos editando
+  if (editable) {
+    AtsState._hayDirty = false;
+    draftIniciarTimer();
+    draftChequearAlAbrir(ficha.id || null);
+    // Marcar dirty en cualquier cambio del formulario
+    setTimeout(() => {
+      document.querySelectorAll('#view-ats_ficha input, #view-ats_ficha textarea, #view-ats_ficha select').forEach(el => {
+        el.addEventListener('input', () => { AtsState._hayDirty = true; draftGuardar(); }, { once: false });
+      });
+    }, 400);
+  } else {
+    draftDetenerTimer();
+  }
 }
 
 function renderTablaAts(filas, editable) {
@@ -338,6 +487,7 @@ async function guardarFicha(marcarActualizado = false) {
     const id = await Storage.ATS.save(ficha);
     if (!ficha.id) ficha.id = id;
     AtsState.modo = 'saved';
+    draftLimpiar(); // borrador ya no necesario
     renderFicha();
     toast(marcarActualizado ? '✅ Ficha guardada y marcada como Actualizada' : '✓ Ficha guardada correctamente');
   } catch(e) {

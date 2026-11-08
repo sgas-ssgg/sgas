@@ -267,9 +267,13 @@
           <div class="view-actions" id="ficha-actions-edit">
             <button class="btn btn-save" onclick="guardarFicha(false)">💾 Guardar</button>
             <button class="btn btn-primary" onclick="guardarFicha(true)" title="Guarda y marca como Actualizado">✅ Guardar y Actualizar</button>
-            <button class="btn btn-ghost" onclick="history.back()">✕ Cancelar</button>
+            <button class="btn btn-ghost" onclick="draftChequearSalida(() => history.back())">✕ Cancelar</button>
+            <span id="draft-indicator" style="font-size:11px;color:#10b981;margin-left:8px"></span>
           </div>
         </div>
+
+        <!-- Banner de borrador recuperable -->
+        <div id="draft-banner" style="display:none;padding:0 24px 0"></div>
 
         <div class="ficha-block">
           <h2>Datos de la ficha</h2>
@@ -611,8 +615,8 @@
 <script src="js/jszip.min.js" defer></script>
 <script src="js/utils.js?v=3"></script>
 <script src="js/storage.js?v=3"></script>
-<script src="js/app.js?v=3"></script>
-<script src="js/ats.js?v=3"></script>
+<script src="js/app.js?v=4"></script>
+<script src="js/ats.js?v=4"></script>
 <script src="js/emergencias.js?v=3"></script>
 <script src="js/documentos.js?v=3"></script>
 <script src="js/config.js?v=3"></script>

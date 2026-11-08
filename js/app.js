@@ -68,6 +68,14 @@ function route(hash) {
 }
 
 function navigate(hash, pushState = true) {
+  // Si hay cambios sin guardar en la ficha, pedir confirmación
+  if (typeof AtsState !== 'undefined' && AtsState._hayDirty && AtsState.modo === 'edit') {
+    draftChequearSalida(() => {
+      if (pushState) history.pushState({ hash }, '', '#' + hash);
+      route(hash);
+    });
+    return;
+  }
   if (pushState) history.pushState({ hash }, '', '#' + hash);
   route(hash);
 }
