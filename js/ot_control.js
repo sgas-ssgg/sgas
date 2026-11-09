@@ -509,8 +509,9 @@ async function descargarExcelControlOt() {
 
   const sCab  = { font: { bold: true, color: { argb: BLANC.argb }, name: 'Calibri', size: 9 }, fill: { type: 'pattern', pattern: 'solid', fgColor: AZUL  }, alignment: { horizontal: 'center', vertical: 'middle' }, border: bords };
   const sDato = { font: { name: 'Calibri', size: 9, color: { argb: NEGRO.argb } }, fill: { type: 'pattern', pattern: 'solid', fgColor: GRISF }, alignment: { vertical: 'middle', horizontal: 'center' }, border: bords };
-  const sSi   = { ...sDato, fill: { type: 'pattern', pattern: 'solid', fgColor: VERD }, font: { ...sDato.font, color: { argb: 'FF10B981' }, bold: true } };
-  const sNo   = { ...sDato, fill: { type: 'pattern', pattern: 'solid', fgColor: ROJO }, font: { ...sDato.font, color: { argb: 'FFEF4444' } } };
+  // Con ATS: fondo blanco + ✔ azul — Sin ATS: fondo gris plomo vacío
+  const sSi   = { ...sDato, fill: { type: 'pattern', pattern: 'solid', fgColor: BLANC }, font: { ...sDato.font, color: { argb: 'FF2563eb' }, bold: true, size: 11 } };
+  const sNo   = { ...sDato, fill: { type: 'pattern', pattern: 'solid', fgColor: PLOMO }, font: { ...sDato.font, color: { argb: 'FF94a3b8' } } };
   const sComp = { ...sDato, fill: { type: 'pattern', pattern: 'solid', fgColor: GRISCOMP }, font: { ...sDato.font, color: { argb: GRIS.argb } } };
 
   // Anchos: Item + 10 disciplinas + Orden + Descripción + Tag + Completada
@@ -535,7 +536,7 @@ async function descargarExcelControlOt() {
 
     const vals = [
       idx + 1,
-      ...OT_DISCIPLINAS.map(d => cats.has(d.categoria.toUpperCase()) ? '✅' : '❌'),
+      ...OT_DISCIPLINAS.map(d => cats.has(d.categoria.toUpperCase()) ? '✔' : ''),
       orden,
       ot.descripcion || '',
       ot.tag || '',
@@ -595,15 +596,15 @@ async function agregarHojaControlOtAlReporte(wb) {
   const NEGRO = { argb: 'FF1A1A1A' };
   const GRISF = { argb: 'FFEEF2F7' };
   const GRISCOMP = { argb: 'FFD1D5DB' };
-  const VERD  = { argb: 'FFD1FAE5' };
-  const ROJO  = { argb: 'FFFEE2E2' };
+  const PLOMO = { argb: 'FF94a3b8' };  // gris plomo sin ATS
   const borde = { style: 'thin', color: { argb: 'FFB4B4B4' } };
   const bords = { top: borde, left: borde, bottom: borde, right: borde };
   const sCab  = { font: { bold: true, color: { argb: BLANC.argb }, name: 'Calibri', size: 9 }, fill: { type: 'pattern', pattern: 'solid', fgColor: AZUL }, alignment: { horizontal: 'center', vertical: 'middle' }, border: bords };
   const sDato = { font: { name: 'Calibri', size: 9, color: { argb: NEGRO.argb } }, fill: { type: 'pattern', pattern: 'solid', fgColor: GRISF }, alignment: { vertical: 'middle', horizontal: 'center' }, border: bords };
   const sComp = { ...sDato, fill: { type: 'pattern', pattern: 'solid', fgColor: GRISCOMP }, font: { ...sDato.font, color: { argb: 'FF6B7280' } } };
-  const sSi   = { ...sDato, fill: { type: 'pattern', pattern: 'solid', fgColor: VERD }, font: { ...sDato.font, color: { argb: 'FF10B981' }, bold: true } };
-  const sNo   = { ...sDato, fill: { type: 'pattern', pattern: 'solid', fgColor: ROJO }, font: { ...sDato.font, color: { argb: 'FFEF4444' } } };
+  // Con ATS: fondo blanco + ✔ azul — Sin ATS: fondo gris plomo vacío
+  const sSi   = { ...sDato, fill: { type: 'pattern', pattern: 'solid', fgColor: BLANC }, font: { ...sDato.font, color: { argb: 'FF2563eb' }, bold: true, size: 11 } };
+  const sNo   = { ...sDato, fill: { type: 'pattern', pattern: 'solid', fgColor: PLOMO }, font: { ...sDato.font, color: { argb: 'FF94a3b8' } } };
 
   ws.columns = [
     { width: 6 }, ...OT_DISCIPLINAS.map(() => ({ width: 7 })),
@@ -626,7 +627,7 @@ async function agregarHojaControlOtAlReporte(wb) {
     const sLeft    = { ...sBase, alignment: { vertical: 'middle', horizontal: 'left', wrapText: true } };
     const row = ws.addRow([
       idx + 1,
-      ...OT_DISCIPLINAS.map(d => cats.has(d.categoria.toUpperCase()) ? '✅' : '❌'),
+      ...OT_DISCIPLINAS.map(d => cats.has(d.categoria.toUpperCase()) ? '✔' : ''),
       orden,
       ot.grupo_planif  || '',
       ot.descripcion   || '',
