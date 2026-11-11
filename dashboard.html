@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Operativo — Parada de Planta SS.GG</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #f0f4f8; }
+
+    .kpi-card {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.10);
+      border-top: 5px solid;
+      transition: transform .2s, box-shadow .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 36px rgba(0,0,0,.15);
+    }
+    .kpi-card::after {
+      content: '';
+      position: absolute;
+      bottom: -20px; right: -20px;
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      opacity: .06;
+      background: currentColor;
+    }
+    .kpi-num {
+      font-size: 3.5rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .kpi-om {
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .5px;
+    }
+    .badge-hoy {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 6px;
+    }
+    .print-btn {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: #1e3a5f;
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 22px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(30,58,95,.4);
+      display: flex; align-items: center; gap: 8px;
+      transition: background .2s;
+      z-index: 100;
+    }
+    .print-btn:hover { background: #2d4a6e; }
+    @media print {
+      .print-btn, .back-btn { display: none !important; }
+      body { background: #fff; }
+      .kpi-card { box-shadow: none; border: 1px solid #e2e8f0; }
+    }
+    .spinner {
+      border: 3px solid #e2e8f0;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      width: 36px; height: 36px;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+  <!-- Botón volver -->
+  <a href="index.html" class="back-btn inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-4 transition-colors">
+    <i class="fas fa-arrow-left"></i> Volver a la app
+  </a>
+
+  <!-- Loading -->
+  <div id="loading" class="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+    <div class="spinner"></div>
+    <p class="text-slate-500 text-sm">Cargando datos...</p>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="hidden max-w-7xl mx-auto">
+
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center gap-3 mb-2">
+        <div class="w-10 h-10 rounded-full bg-[#1e3a5f] flex items-center justify-center">
+          <i class="fas fa-hard-hat text-white text-lg"></i>
+        </div>
+        <span class="text-xs font-bold tracking-widest text-slate-400 uppercase">SGAS · SS.GG</span>
+      </div>
+      <h1 class="text-2xl md:text-3xl font-black text-[#1e3a5f] uppercase tracking-wide">
+        Dashboard Operativo
+      </h1>
+      <p class="text-sm font-semibold text-slate-500 mt-1 uppercase tracking-widest">
+        Seguridad y Mantenimiento Industrial — Parada de Planta
+      </p>
+      <div class="inline-block mt-3 bg-[#1e3a5f] text-white text-xs font-bold px-4 py-1.5 rounded-full tracking-wider" id="fecha-header">
+        RESUMEN DIARIO · <span id="fecha-txt"></span>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div id="kpi-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6"></div>
+
+    <!-- OT Stats -->
+    <div class="bg-white rounded-2xl shadow-md p-5 mb-6 border-l-4 border-[#2563eb]">
+      <div class="flex flex-wrap items-center gap-4 justify-between">
+        <div class="flex items-center gap-3">
+          <i class="fas fa-clipboard-list text-[#2563eb] text-2xl"></i>
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Control de Órdenes de Mantenimiento</p>
+            <p class="text-sm text-slate-500">Parada de Planta 2027</p>
+          </div>
+        </div>
+        <div class="flex gap-6 flex-wrap">
+          <div class="text-center">
+            <div class="text-3xl font-black text-[#1e3a5f]" id="ot-total">—</div>
+            <div class="text-xs font-bold text-slate-400 uppercase">Total OM</div>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl font-black text-emerald-500" id="ot-con">—</div>
+            <div class="text-xs font-bold text-slate-400 uppercase">Con ATS</div>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl font-black text-slate-400" id="ot-sin">—</div>
+            <div class="text-xs font-bold text-slate-400 uppercase">Sin ATS</div>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl font-black text-amber-500" id="ot-pct">—</div>
+            <div class="text-xs font-bold text-slate-400 uppercase">% Avance</div>
+          </div>
+        </div>
+      </div>
+      <!-- Barra de progreso -->
+      <div class="mt-4 bg-slate-100 rounded-full h-3 overflow-hidden">
+        <div id="ot-bar" class="h-3 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-700" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Resumen textual -->
+    <div class="bg-[#1e3a5f] text-white rounded-2xl shadow-lg p-6 mb-8">
+      <div class="flex items-center gap-3 mb-4">
+        <i class="fas fa-file-alt text-blue-300 text-xl"></i>
+        <div>
+          <h2 class="text-sm font-black uppercase tracking-widest text-blue-200">Resumen Diario Detallado</h2>
+          <p class="text-xs text-blue-300" id="resumen-fecha-sub"></p>
+        </div>
+      </div>
+      <p id="resumen-texto" class="text-sm leading-relaxed text-slate-200"></p>
+      <div id="resumen-categorias" class="mt-4 flex flex-wrap gap-2"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center text-xs text-slate-400 pb-4">
+      SGAS · Sistema de Gestión ATS · SS.GG · Datos en tiempo real
+    </div>
+
+  </div>
+
+  <!-- Botón imprimir -->
+  <button class="print-btn" onclick="window.print()">
+    <i class="fas fa-print"></i> Imprimir / PDF
+  </button>
+
+  <!-- Scripts de la app para acceder a Storage -->
+  <script src="js/storage.js?v=3"></script>
+  <script>
+    // Colores por categoría
+    const CAT_COLORS = {
+      'ANDAMIOS':            { border: '#f59e0b', num: '#f59e0b', bg: '#fffbeb', icon: 'fa-layer-group',      om: '#d97706' },
+      'AISLAMIENTO TERMICO': { border: '#3b82f6', num: '#2563eb', bg: '#eff6ff', icon: 'fa-thermometer-half', om: '#1d4ed8' },
+      'IZAJE':               { border: '#8b5cf6', num: '#7c3aed', bg: '#f5f3ff', icon: 'fa-arrow-up',         om: '#6d28d9' },
+      'PINTURA':             { border: '#ec4899', num: '#db2777', bg: '#fdf2f8', icon: 'fa-paint-roller',     om: '#be185d' },
+      'MECANICA':            { border: '#10b981', num: '#059669', bg: '#ecfdf5', icon: 'fa-cog',              om: '#047857' },
+      'INSTRUMENTACION':     { border: '#06b6d4', num: '#0891b2', bg: '#ecfeff', icon: 'fa-microchip',        om: '#0e7490' },
+      'ELECTRICIDAD':        { border: '#f97316', num: '#ea580c', bg: '#fff7ed', icon: 'fa-bolt',             om: '#c2410c' },
+      'REPARACIONES':        { border: '#64748b', num: '#475569', bg: '#f8fafc', icon: 'fa-wrench',           om: '#334155' },
+      'LAVADO INDUSTRIAL':   { border: '#06b6d4', num: '#0891b2', bg: '#ecfeff', icon: 'fa-tint',             om: '#0e7490' },
+      'DEFAULT':             { border: '#94a3b8', num: '#64748b', bg: '#f8fafc', icon: 'fa-hard-hat',         om: '#475569' },
+    };
+
+    function getCatColor(cat) {
+      return CAT_COLORS[cat.toUpperCase()] || CAT_COLORS['DEFAULT'];
+    }
+
+    function fechaHoy() {
+      return new Date().toLocaleDateString('es-PE', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+    }
+
+    function fechaCorta() {
+      return new Date().toLocaleDateString('es-PE', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    }
+
+    // Contar OM asociadas a una categoría desde las fichas ATS
+    function contarOmDeCategoria(fichas, categoria) {
+      const oms = new Set();
+      fichas
+        .filter(f => (f.categoria||'').toUpperCase() === categoria.toUpperCase())
+        .forEach(f => {
+          (f.ot_tags || []).forEach(ot => {
+            if (ot.ot) oms.add(ot.ot.trim());
+          });
+        });
+      return oms.size;
+    }
+
+    // Contar ATS nuevos hoy por categoría
+    function nuevosHoyDeCategoria(fichas, categoria) {
+      const hoy = new Date().toLocaleDateString('en-CA');
+      return fichas.filter(f =>
+        (f.categoria||'').toUpperCase() === categoria.toUpperCase() &&
+        f.esNuevo &&
+        f.created_at &&
+        new Date(f.created_at).toLocaleDateString('en-CA') === hoy
+      ).length;
+    }
+
+    function actualizadosHoy(fichas, categoria) {
+      const hoy = new Date().toLocaleDateString('en-CA');
+      return fichas.filter(f =>
+        (f.categoria||'').toUpperCase() === categoria.toUpperCase() &&
+        !f.esNuevo &&
+        f.updated_at &&
+        new Date(f.updated_at).toLocaleDateString('en-CA') === hoy
+      ).length;
+    }
+
+    async function cargarDashboard() {
+      try {
+        // Esperar Storage
+        await new Promise(r => setTimeout(r, 600));
+        if (typeof Storage === 'undefined' || !Storage.ATS) {
+          throw new Error('Storage no disponible');
+        }
+
+        // Cargar datos en paralelo
+        const [fichas, ots] = await Promise.all([
+          Storage.ATS.getReporteParada(),
+          Storage.OtControl.getAll(),
+        ]);
+
+        // Agrupar ATS por categoría
+        const porCat = {};
+        fichas.forEach(f => {
+          const c = (f.categoria || 'Sin categoría').toUpperCase();
+          if (!porCat[c]) porCat[c] = [];
+          porCat[c].push(f);
+        });
+
+        // Mapa OT → disciplinas
+        const otEnAts = {};
+        fichas.forEach(f => {
+          const cat = (f.categoria || '').toUpperCase();
+          (f.ot_tags || []).forEach(item => {
+            const ot = (item.ot || '').trim();
+            if (!ot) return;
+            if (!otEnAts[ot]) otEnAts[ot] = new Set();
+            otEnAts[ot].add(cat);
+          });
+        });
+
+        const totalAts = fichas.length;
+        const totalOm  = ots.length;
+        const conAts   = ots.filter(o => !!otEnAts[(o.orden||'').trim()]).length;
+        const sinAts   = totalOm - conAts;
+        const pct      = totalOm > 0 ? Math.round((conAts / totalOm) * 100) : 0;
+
+        // Fecha
+        const fechaLarga = fechaHoy();
+        const fechaC     = fechaCorta();
+        document.getElementById('fecha-txt').textContent = fechaC;
+        document.getElementById('resumen-fecha-sub').textContent = fechaLarga;
+
+        // ── KPI Cards ──
+        const grid = document.getElementById('kpi-grid');
+        grid.innerHTML = '';
+
+        // Card TOTAL
+        const hoyTotal = fichas.filter(f => {
+          const hoy = new Date().toLocaleDateString('en-CA');
+          return f.created_at && new Date(f.created_at).toLocaleDateString('en-CA') === hoy;
+        }).length;
+        const omTotal = new Set(fichas.flatMap(f => (f.ot_tags||[]).map(o=>o.ot).filter(Boolean))).size;
+
+        grid.innerHTML += `
+          <div class="kpi-card border-[#1e3a5f] p-5 flex flex-col items-center text-center col-span-2 md:col-span-1" style="color:#1e3a5f">
+            <i class="fas fa-shield-alt text-2xl mb-2" style="color:#1e3a5f;opacity:.7"></i>
+            <div class="kpi-num" style="color:#1e3a5f">${totalAts}</div>
+            <div class="text-xs font-black uppercase tracking-widest text-slate-500 mt-1">Total ATS<br>Realizados</div>
+            <div class="kpi-om text-slate-400 mt-2"><i class="fas fa-clipboard-check mr-1"></i>${omTotal} OM asociadas</div>
+            ${hoyTotal > 0 ? `<span class="badge-hoy bg-blue-50 text-blue-700"><i class="fas fa-plus-circle"></i> +${hoyTotal} hoy</span>` : ''}
+          </div>`;
+
+        // Cards por categoría
+        const cats = Object.entries(porCat).sort((a,b) => b[1].length - a[1].length);
+        cats.forEach(([cat, lista]) => {
+          const c     = getCatColor(cat);
+          const om    = contarOmDeCategoria(fichas, cat);
+          const nHoy  = nuevosHoyDeCategoria(fichas, cat);
+          const aHoy  = actualizadosHoy(fichas, cat);
+          const label = cat.length > 18 ? cat.slice(0,16)+'...' : cat;
+          grid.innerHTML += `
+            <div class="kpi-card p-5 flex flex-col items-center text-center" style="border-color:${c.border};background:${c.bg};color:${c.num}">
+              <i class="fas ${c.icon} text-xl mb-2" style="opacity:.7"></i>
+              <div class="kpi-num">${lista.length}</div>
+              <div class="text-xs font-black uppercase tracking-widest mt-1" style="color:#475569">${label}</div>
+              <div class="kpi-om mt-2" style="color:${c.om}"><i class="fas fa-tools mr-1"></i>${om} OM asociadas</div>
+              <div class="flex gap-1 flex-wrap justify-center mt-1">
+                ${nHoy > 0 ? `<span class="badge-hoy bg-emerald-50 text-emerald-700"><i class="fas fa-plus"></i> ${nHoy} nuevo${nHoy>1?'s':''}</span>` : ''}
+                ${aHoy > 0 ? `<span class="badge-hoy bg-amber-50 text-amber-700"><i class="fas fa-sync-alt"></i> ${aHoy} actualiz.</span>` : ''}
+              </div>
+            </div>`;
+        });
+
+        // ── OT Stats ──
+        document.getElementById('ot-total').textContent = totalOm;
+        document.getElementById('ot-con').textContent   = conAts;
+        document.getElementById('ot-sin').textContent   = sinAts;
+        document.getElementById('ot-pct').textContent   = pct + '%';
+        document.getElementById('ot-bar').style.width   = pct + '%';
+
+        // ── Resumen textual ──
+        const hoy = new Date().toLocaleDateString('en-CA');
+        const nuevoHoy    = fichas.filter(f => f.esNuevo && f.created_at && new Date(f.created_at).toLocaleDateString('en-CA') === hoy);
+        const actualizHoy = fichas.filter(f => !f.esNuevo && f.updated_at && new Date(f.updated_at).toLocaleDateString('en-CA') === hoy);
+
+        // Agrupar por cat para el resumen
+        const nHoyPorCat = {}, aHoyPorCat = {};
+        nuevoHoy.forEach(f => {
+          const c = (f.categoria||'Sin cat').toUpperCase();
+          nHoyPorCat[c] = (nHoyPorCat[c]||0)+1;
+        });
+        actualizHoy.forEach(f => {
+          const c = (f.categoria||'Sin cat').toUpperCase();
+          aHoyPorCat[c] = (aHoyPorCat[c]||0)+1;
+        });
+
+        let textoResumen = '';
+        const fechaNegrita = `<strong>${fechaLarga.charAt(0).toUpperCase()+fechaLarga.slice(1)}</strong>`;
+
+        if (nuevoHoy.length === 0 && actualizHoy.length === 0) {
+          textoResumen = `${fechaNegrita}, no se han registrado nuevas actividades de seguridad industrial en la jornada de hoy. Total acumulado: <strong>${totalAts} ATS</strong> de Parada de Planta.`;
+        } else {
+          const partes = [];
+          Object.entries(nHoyPorCat).forEach(([cat, n]) => {
+            const om = contarOmDeCategoria(fichas.filter(f => {
+              const hoyC = new Date().toLocaleDateString('en-CA');
+              return f.esNuevo && f.created_at && new Date(f.created_at).toLocaleDateString('en-CA') === hoyC && (f.categoria||'').toUpperCase() === cat;
+            }), cat);
+            partes.push(`<strong>${n} ATS de ${cat}</strong>${om>0?` (${om} OM asociadas)`:''}`);
+          });
+          const partesAct = [];
+          Object.entries(aHoyPorCat).forEach(([cat, n]) => {
+            partesAct.push(`<strong>${n} de ${cat}</strong>`);
+          });
+
+          textoResumen = `${fechaNegrita}, se completaron exitosamente las siguientes actividades de seguridad industrial: `;
+          if (partes.length > 0) textoResumen += partes.join(', ') + '.';
+          if (partesAct.length > 0) textoResumen += ` Además se actualizaron: ${partesAct.join(', ')}.`;
+          textoResumen += ` Total acumulado en la parada: <strong>${totalAts} ATS</strong>.`;
+        }
+
+        document.getElementById('resumen-texto').innerHTML = textoResumen;
+
+        // Badges de categorías
+        const badgesEl = document.getElementById('resumen-categorias');
+        cats.forEach(([cat, lista]) => {
+          const c = getCatColor(cat);
+          badgesEl.innerHTML += `
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold" 
+              style="background:${c.bg};color:${c.num};border:1px solid ${c.border}20">
+              <i class="fas ${c.icon}"></i> ${cat}: ${lista.length}
+            </span>`;
+        });
+
+        // Mostrar
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+
+      } catch(err) {
+        console.error(err);
+        document.getElementById('loading').innerHTML = `
+          <div class="text-center">
+            <i class="fas fa-exclamation-triangle text-4xl text-amber-400 mb-3"></i>
+            <p class="text-slate-600 font-semibold">Error al cargar datos</p>
+            <p class="text-slate-400 text-sm mt-1">${err.message}</p>
+            <a href="index.html" class="mt-4 inline-block text-sm text-blue-600 underline">Volver a la app</a>
+          </div>`;
+      }
+    }
+
+    // Iniciar cuando Storage esté listo
+    document.addEventListener('DOMContentLoaded', () => {
+      // Storage necesita inicializarse
+      if (typeof Storage !== 'undefined' && Storage.init) {
+        Storage.init().then(cargarDashboard).catch(cargarDashboard);
+      } else {
+        setTimeout(cargarDashboard, 800);
+      }
+    });
+  </script>
+</body>
+</html>
